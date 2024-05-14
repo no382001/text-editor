@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.18)
 project(texteditor)
 
 set(OpenGL_GL_PREFERENCE GLVND) # for freetype-gl
+set(freetype-gl_BUILD_TESTS OFF)
+set(freetype-gl_BUILD_DEMOS OFF)
 
 add_subdirectory(freetype-gl)
 

@@ -33,8 +33,8 @@ struct editor_t {
     std::ifstream file;
     std::vector<std::string> lines;
     texture_font_t* font = nullptr;
-    vec2 cursor_pos = {5,500};
-    vec2 scroll_pos;
+    vec2 cursor_pos = {0,0};
+    float scroll_pos = 0;
 
     editor_t(){
         file = std::ifstream("tinyscm/stl/core.scm");
@@ -87,33 +87,6 @@ void add_text( vertex_buffer_t * buffer, texture_font_t * font, char * text, vec
     }
 }
 
-void add_rectangle(vertex_buffer_t *buffer, float x, float y, float width, float height, vec4 *color) {
-    // define colors and positions
-    float r = color->red, g = color->green, b = color->blue, a = color->alpha;
-
-    // define the corners of the rectangle
-    int x0 = (int)x;
-    int y0 = (int)y;
-    int x1 = (int)(x + width);
-    int y1 = (int)(y + height);
-
-    // normally texture coordinates are used for texturing,
-    // here we just set them to 0.0 or 1.0 as placeholders
-    float s0 = 0.0f, t0 = 0.0f, s1 = 1.0f, t1 = 1.0f;
-
-    // indices for the two triangles that make up the rectangle
-    GLuint indices[6] = {0, 1, 2, 0, 2, 3};
-
-    vertex_t vertices[4] = {
-        {x0, y0, 0, s0, t0, r, g, b, a}, // Bottom left
-        {x0, y1, 0, s0, t1, r, g, b, a}, // Top left
-        {x1, y1, 0, s1, t1, r, g, b, a}, // Top right
-        {x1, y0, 0, s1, t0, r, g, b, a}  // Bottom right
-    };
-
-    vertex_buffer_push_back(buffer, vertices, 4, indices, 6);
-}
-
 void init(vec2 pen) {
     size_t i;
     atlas = texture_atlas_new( 512, 512, 1 );
@@ -145,7 +118,6 @@ void init(vec2 pen) {
     mat4_set_identity( &view );
 }
 
-
 void display( GLFWwindow* window ) {
     
     glClearColor( 1, 1, 1, 1 );
@@ -156,16 +128,29 @@ void display( GLFWwindow* window ) {
 
     glUseProgram( shader );
     {
-        glUniform1i( glGetUniformLocation( shader, "texture" ),
-                     0 );
-        glUniformMatrix4fv( glGetUniformLocation( shader, "model" ),
-                            1, 0, model.data);
-        glUniformMatrix4fv( glGetUniformLocation( shader, "view" ),
-                            1, 0, view.data);
-        glUniformMatrix4fv( glGetUniformLocation( shader, "projection" ),
-                            1, 0, projection.data);
+        glUniform1i( glGetUniformLocation( shader, "texture" ), 0 );
+        glUniformMatrix4fv( glGetUniformLocation( shader, "model" ), 1, 0, model.data);
+        glUniformMatrix4fv( glGetUniformLocation( shader, "view" ), 1, 0, view.data);
+        glUniformMatrix4fv( glGetUniformLocation( shader, "projection" ), 1, 0, projection.data);
+        glUniform1f(glGetUniformLocation(shader, "scroll_offset"), editor.scroll_pos);
         vertex_buffer_render( buffer, GL_TRIANGLES );
     }
+    // go back to imm. mode
+    glUseProgram(0);
+
+    float x = editor.cursor_pos.x;
+    float y = editor.cursor_pos.y;
+
+    glBegin(GL_TRIANGLES);
+        glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
+        glVertex3f(x, y + 0.1f, 0.0f);
+
+        glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
+        glVertex3f(x - 0.1f, y - 0.1f, 0.0f);
+
+        glColor4f(0.0f, 0.0f, 1.0f, 1.0f);
+        glVertex3f(x + 0.1f, y - 0.1f, 0.0f);
+    glEnd();
 
     glfwSwapBuffers( window );
 }
@@ -182,24 +167,22 @@ void keyboard( GLFWwindow* window, int key, int scancode, int action, int mods )
                 glfwSetWindowShouldClose(window, GL_TRUE);
                 break;
             case GLFW_KEY_UP:
-                if (editor.cursor_pos.y > 0) editor.cursor_pos.y--;
+                editor.cursor_pos.y += 0.01;
                 break;
             case GLFW_KEY_DOWN:
-                if (editor.cursor_pos.y < editor.lines.size() - 1) editor.cursor_pos.y++;
+                editor.cursor_pos.y -= 0.01;
                 break;
             case GLFW_KEY_LEFT:
-                if (editor.cursor_pos.x > 0) editor.cursor_pos.x--;
-                else if (editor.cursor_pos.y > 0) {
-                    editor.cursor_pos.y--;
-                    editor.cursor_pos.x = editor.lines[editor.cursor_pos.y].size();
-                }
+                editor.cursor_pos.x -= 0.01;
                 break;
             case GLFW_KEY_RIGHT:
-                //if (editor.cursor_pos.x < editor.lines[editor.cursor_pos.y].size()) editor.cursor_pos.x++;
-                 if (editor.cursor_pos.y < editor.lines.size() - 1) {
-                    editor.cursor_pos.y++;
-                    editor.cursor_pos.x = 0;
-                }
+                editor.cursor_pos.x += 0.01;
+                break;
+            case GLFW_KEY_PAGE_UP:
+                editor.scroll_pos += 1;
+                break;
+            case GLFW_KEY_PAGE_DOWN:
+                editor.scroll_pos -= 1;
                 break;
         }
     }
