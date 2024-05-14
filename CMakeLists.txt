@@ -14,9 +14,8 @@ set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(
     ${PROJECT_NAME}
-    main.c
+    main.cpp
     freetype-gl/demos/mat4.c
-    freetype-gl/demos/screenshot-util.c
     freetype-gl/demos/shader.c
 )
 
