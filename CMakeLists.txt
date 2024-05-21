@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.18)
 project(texteditor)
 
-set(OpenGL_GL_PREFERENCE GLVND) # for freetype-gl
+# for freetype-gl
+set(OpenGL_GL_PREFERENCE GLVND)
 set(freetype-gl_BUILD_TESTS OFF)
 set(freetype-gl_BUILD_DEMOS OFF)
+set(freetype-gl_BUILD_MAKEFONT OFF)
+set(freetype-gl_BUILD_APIDOC OFF)
 
 add_subdirectory(freetype-gl)
 
@@ -30,4 +33,5 @@ target_link_libraries(
     GLEW
     GL
     freetype
+    fontconfig
 )

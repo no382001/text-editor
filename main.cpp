@@ -2,199 +2,281 @@
  *
  * Distributed under the OSI-approved BSD 2-Clause License.  See accompanying
  * file `LICENSE` for more details.
+ *
+ * ============================================================================
+ *
+ * Example demonstrating markup usage
+ *
+ * ============================================================================
  */
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <fontconfig/fontconfig.h>
 
 #include "freetype-gl.h"
-#include "mat4.h"
-#include "shader.h"
+#include "font-manager.h"
 #include "vertex-buffer.h"
+#include "text-buffer.h"
+#include "markup.h"
+#include "shader.h"
+#include "mat4.h"
+#include "screenshot-util.h"
 
 #include <GLFW/glfw3.h>
+#include <vec234.h>
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
 
+// ------------------------------------------------------- typedef & struct ---
 typedef struct {
-    float x, y, z;    // position
-    float s, t;       // texture
-    float r, g, b, a; // color
+    float x, y, z;
+    float r, g, b, a;
 } vertex_t;
 
-GLuint shader;
-texture_atlas_t *atlas;
-vertex_buffer_t *buffer;
-mat4   model, view, projection;
+// ------------------------------------------------------- global variables ---
+font_manager_t * font_manager;
+text_buffer_t * buffer;
+mat4 model, view, projection;
+vertex_buffer_t *lines_buffer;
+GLuint bounds_shader;
+GLuint text_shader;
 
-struct editor_t {
-    std::ifstream file;
-    std::vector<std::string> lines;
-    texture_font_t* font = nullptr;
-    vec2 cursor_pos = {0,0};
-    float scroll_pos = 0;
 
-    editor_t(){
-        file = std::ifstream("tinyscm/stl/core.scm");
-        std::string line;
+// ------------------------------------------------------ match_description ---
+char *
+match_description( char * description )
+{
 
-        if (file.is_open()) {
-            while (getline(file, line)) {
-                lines.push_back(line);
-            }
-            file.close();
-        } else {
-            std::cout << "Unable to open file" << std::endl;
-            return;
-        }
-    }
-};
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(__MINGW32__)
+    fprintf( stderr, "\"font_manager_match_description\" "
+                     "not implemented for windows.\n" );
+    return 0;
+#endif
 
-editor_t editor{};
+    char *filename = 0;
+    FcInit();
+    FcPattern *pattern = FcNameParse((const FcChar8*)description);
+    FcConfigSubstitute( 0, pattern, FcMatchPattern );
+    FcDefaultSubstitute( pattern );
+    FcResult result;
+    FcPattern *match = FcFontMatch( 0, pattern, &result );
+    FcPatternDestroy( pattern );
 
-void add_text( vertex_buffer_t * buffer, texture_font_t * font, char * text, vec4 * color, vec2 * pen ) {
-    size_t i;
-    float r = color->red, g = color->green, b = color->blue, a = color->alpha;
-    for( i = 0; i < strlen(text); ++i )
+    if ( !match )
     {
-        texture_glyph_t *glyph = texture_font_get_glyph( font, text + i );
-        if( glyph != NULL )
+        fprintf( stderr, "fontconfig error: could not match description '%s'", description );
+        return 0;
+    }
+    else
+    {
+        FcValue value;
+        FcResult result = FcPatternGet( match, FC_FILE, 0, &value );
+        if ( result )
         {
-            float kerning =  0.0f;
-            if( i > 0)
-            {
-                kerning = texture_glyph_get_kerning( glyph, text + i - 1 );
-            }
-            pen->x += kerning;
-            int x0  = (int)( pen->x + glyph->offset_x );
-            int y0  = (int)( pen->y + glyph->offset_y );
-            int x1  = (int)( x0 + glyph->width );
-            int y1  = (int)( y0 - glyph->height );
-            float s0 = glyph->s0;
-            float t0 = glyph->t0;
-            float s1 = glyph->s1;
-            float t1 = glyph->t1;
-            GLuint indices[6] = {0,1,2, 0,2,3};
-            vertex_t vertices[4] = { { x0,y0,0,  s0,t0,  r,g,b,a },
-                                     { x0,y1,0,  s0,t1,  r,g,b,a },
-                                     { x1,y1,0,  s1,t1,  r,g,b,a },
-                                     { x1,y0,0,  s1,t0,  r,g,b,a } };
-            vertex_buffer_push_back( buffer, vertices, 4, indices, 6 );
-            pen->x += glyph->advance_x;
+            fprintf( stderr, "fontconfig error: could not match description '%s'", description );
+        }
+        else
+        {
+            filename = strdup( (char *)(value.u.s) );
         }
     }
+    FcPatternDestroy( match );
+    return filename;
 }
 
-void init(vec2 pen) {
-    size_t i;
-    atlas = texture_atlas_new( 512, 512, 1 );
-    buffer = vertex_buffer_new( "vertex:3f,tex_coord:2f,color:4f" );
-    vec4 black = {{0,0,0,1}};
+void init()
+{
+    text_shader = shader_load( "shaders/text.vert",
+                               "shaders/text.frag" );
 
-    for(auto l : editor.lines) {
-        editor.font = texture_font_new_from_file( atlas, 10, "fonts/Vera.ttf" );
-        pen.x = 5;
-        pen.y -= editor.font->height;
-        texture_font_load_glyphs( editor.font, l.c_str() );
-        add_text( buffer, editor.font, const_cast<char*>(l.c_str()), &black, &pen );
-        texture_font_delete( editor.font );
-    }
+    font_manager = font_manager_new( 512, 512, LCD_FILTERING_ON );
+    buffer = text_buffer_new( );
 
-    glGenTextures( 1, &atlas->id );
-    glBindTexture( GL_TEXTURE_2D, atlas->id );
+    vec4 black  = {{0.0, 0.0, 0.0, 1.0}};
+    vec4 white  = {{1.0, 1.0, 1.0, 1.0}};
+    vec4 yellow = {{1.0, 1.0, 0.0, 1.0}};
+    vec4 grey   = {{0.5, 0.5, 0.5, 1.0}};
+    vec4 none   = {{1.0, 1.0, 1.0, 0.0}};
+
+    char *f_normal   = match_description("Droid Serif:size=24");
+    char *f_bold     = match_description("Droid Serif:size=24:weight=bold");
+    char *f_italic   = match_description("Droid Serif:size=24:slant=italic");
+    char *f_japanese = match_description("Droid Sans Japanese:size=18");
+    char *f_math     = match_description("DejaVu Sans:size=24");
+
+    markup_t normal = {
+        .family  = f_normal,
+        .size    = 24.0, .bold    = 0,   .italic  = 0,
+        .spacing = 0.0,  .gamma   = 2.,
+        .foreground_color    = white, .background_color    = none,
+        .underline           = 0,     .underline_color     = white,
+        .overline            = 0,     .overline_color      = white,
+        .strikethrough       = 0,     .strikethrough_color = white,
+        .font = 0,
+    };
+    markup_t highlight = normal; highlight.background_color = grey;
+    markup_t reverse   = normal; reverse.foreground_color = black;
+                                 reverse.background_color = white;
+                                 reverse.gamma = 1.0;
+    markup_t overline  = normal; overline.overline = 1;
+    markup_t underline = normal; underline.underline = 1;
+    markup_t small     = normal; small.size = 10.0;
+    markup_t big       = normal; big.size = 48.0;
+                                 big.italic = 1;
+                                 big.foreground_color = yellow;
+    markup_t bold      = normal; bold.bold = 1; bold.family = f_bold;
+    markup_t italic    = normal; italic.italic = 1; italic.family = f_italic;
+    markup_t japanese  = normal; japanese.family = f_japanese;
+                                 japanese.size = 18.0;
+    markup_t math      = normal; math.family = f_math;
+
+    normal.font = font_manager_get_from_markup( font_manager, &normal );
+    highlight.font = font_manager_get_from_markup( font_manager, &highlight );
+    reverse.font = font_manager_get_from_markup( font_manager, &reverse );
+    overline.font = font_manager_get_from_markup( font_manager, &overline );
+    underline.font = font_manager_get_from_markup( font_manager, &underline );
+    small.font = font_manager_get_from_markup( font_manager, &small );
+    big.font = font_manager_get_from_markup( font_manager, &big );
+    bold.font = font_manager_get_from_markup( font_manager, &bold );
+    italic.font = font_manager_get_from_markup( font_manager, &italic );
+    japanese.font = font_manager_get_from_markup( font_manager, &japanese );
+    math.font = font_manager_get_from_markup( font_manager, &math );
+
+    vec2 pen = {{20, 200}};
+    text_buffer_printf( buffer, &pen,
+                        &underline, "The",
+                        &normal,    " Quick",
+                        &big,       " brown ",
+                        &reverse,   " fox \n",
+                        &italic,    "jumps over ",
+                        &bold,      "the lazy ",
+                        &normal,    "dog.\n",
+                        &small,     "Now is the time for all good men "
+                                    "to come to the aid of the party.\n",
+                        &italic,    "Ég get etið gler án þess að meiða mig.\n",
+                        &japanese,  "私はガラスを食べられます。 それは私を傷つけません\n",
+                        &math,      "ℕ ⊆ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ",
+                        NULL );
+
+    glGenTextures( 1, &font_manager->atlas->id );
+    glBindTexture( GL_TEXTURE_2D, font_manager->atlas->id );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, atlas->width, atlas->height,
-                  0, GL_RED, GL_UNSIGNED_BYTE, atlas->data );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, font_manager->atlas->width,
+                  font_manager->atlas->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+                  font_manager->atlas->data );
 
-    shader = shader_load("shaders/v3f-t2f-c4f.vert",
-                         "shaders/v3f-t2f-c4f.frag");
+    text_buffer_align( buffer, &pen, ALIGN_CENTER );
+
+    vec4 bounds = text_buffer_get_bounds( buffer, &pen );
+    float left = bounds.left;
+    float right = bounds.left + bounds.width;
+    float top = bounds.top;
+    float bottom = bounds.top - bounds.height;
+
+    bounds_shader = shader_load( "shaders/v3f-c4f.vert",
+                                 "shaders/v3f-c4f.frag" );
+
+    lines_buffer = vertex_buffer_new( "vertex:3f,color:4f" );
+    vertex_t vertices[] = { { left - 10,         top, 0, 0,0,0,1}, // top
+                            {right + 10,         top, 0, 0,0,0,1},
+
+                            { left - 10,      bottom, 0, 0,0,0,1}, // bottom
+                            {right + 10,      bottom, 0, 0,0,0,1},
+
+                            {      left,    top + 10, 0, 0,0,0,1}, // left
+                            {      left, bottom - 10, 0, 0,0,0,1},
+                            {     right,    top + 10, 0, 0,0,0,1}, // right
+                            {     right, bottom - 10, 0, 0,0,0,1} };
+    GLuint indices[] = { 0,1,2,3,4,5,6,7 };
+    vertex_buffer_push_back( lines_buffer, vertices, 8, indices, 8);
+
     mat4_set_identity( &projection );
     mat4_set_identity( &model );
     mat4_set_identity( &view );
 }
 
-void display( GLFWwindow* window ) {
-    
-    glClearColor( 1, 1, 1, 1 );
+
+// ---------------------------------------------------------------- display ---
+void display( GLFWwindow* window )
+{
+    glClearColor(0.40,0.40,0.45,1.00);
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    glEnable( GL_BLEND );
-    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
-    glUseProgram( shader );
+    glColor4f(1.00,1.00,1.00,1.00);
+    glUseProgram( text_shader );
     {
-        glUniform1i( glGetUniformLocation( shader, "texture" ), 0 );
-        glUniformMatrix4fv( glGetUniformLocation( shader, "model" ), 1, 0, model.data);
-        glUniformMatrix4fv( glGetUniformLocation( shader, "view" ), 1, 0, view.data);
-        glUniformMatrix4fv( glGetUniformLocation( shader, "projection" ), 1, 0, projection.data);
-        glUniform1f(glGetUniformLocation(shader, "scroll_offset"), editor.scroll_pos);
-        vertex_buffer_render( buffer, GL_TRIANGLES );
+        glUniformMatrix4fv( glGetUniformLocation( text_shader, "model" ),
+                            1, 0, model.data);
+        glUniformMatrix4fv( glGetUniformLocation( text_shader, "view" ),
+                            1, 0, view.data);
+        glUniformMatrix4fv( glGetUniformLocation( text_shader, "projection" ),
+                            1, 0, projection.data);
+        glUniform1i( glGetUniformLocation( text_shader, "tex" ), 0 );
+        glUniform3f( glGetUniformLocation( text_shader, "pixel" ),
+                     1.0f/font_manager->atlas->width,
+                     1.0f/font_manager->atlas->height,
+                     (float)font_manager->atlas->depth );
+
+        glEnable( GL_BLEND );
+
+        glActiveTexture( GL_TEXTURE0 );
+        glBindTexture( GL_TEXTURE_2D, font_manager->atlas->id );
+
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+        vertex_buffer_render( buffer->buffer, GL_TRIANGLES );
+        glBindTexture( GL_TEXTURE_2D, 0 );
+        glUseProgram( 0 );
     }
-    // go back to imm. mode
-    glUseProgram(0);
 
-    float x = editor.cursor_pos.x;
-    float y = editor.cursor_pos.y;
-
-    glBegin(GL_TRIANGLES);
-        glColor4f(1.0f, 0.0f, 0.0f, 1.0f);
-        glVertex3f(x, y + 0.1f, 0.0f);
-
-        glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
-        glVertex3f(x - 0.1f, y - 0.1f, 0.0f);
-
-        glColor4f(0.0f, 0.0f, 1.0f, 1.0f);
-        glVertex3f(x + 0.1f, y - 0.1f, 0.0f);
-    glEnd();
+    glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+    glUseProgram( bounds_shader );
+    {
+        glUniformMatrix4fv( glGetUniformLocation( bounds_shader, "model" ),
+                            1, 0, model.data);
+        glUniformMatrix4fv( glGetUniformLocation( bounds_shader, "view" ),
+                            1, 0, view.data);
+        glUniformMatrix4fv( glGetUniformLocation( bounds_shader, "projection" ),
+                            1, 0, projection.data);
+        vertex_buffer_render( lines_buffer, GL_LINES );
+    }
 
     glfwSwapBuffers( window );
 }
 
-void reshape( GLFWwindow* window, int width, int height ) {
+
+// ---------------------------------------------------------------- reshape ---
+void reshape( GLFWwindow* window, int width, int height )
+{
     glViewport(0, 0, width, height);
     mat4_set_orthographic( &projection, 0, width, 0, height, -1, 1);
 }
 
-void keyboard( GLFWwindow* window, int key, int scancode, int action, int mods ) {
-    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-        switch(key) {
-            case GLFW_KEY_ESCAPE:
-                glfwSetWindowShouldClose(window, GL_TRUE);
-                break;
-            case GLFW_KEY_UP:
-                editor.cursor_pos.y += 0.01;
-                break;
-            case GLFW_KEY_DOWN:
-                editor.cursor_pos.y -= 0.01;
-                break;
-            case GLFW_KEY_LEFT:
-                editor.cursor_pos.x -= 0.01;
-                break;
-            case GLFW_KEY_RIGHT:
-                editor.cursor_pos.x += 0.01;
-                break;
-            case GLFW_KEY_PAGE_UP:
-                editor.scroll_pos += 1;
-                break;
-            case GLFW_KEY_PAGE_DOWN:
-                editor.scroll_pos -= 1;
-                break;
-        }
+
+// --------------------------------------------------------------- keyboard ---
+void keyboard( GLFWwindow* window, int key, int scancode, int action, int mods )
+{
+    if ( key == GLFW_KEY_ESCAPE && action == GLFW_PRESS )
+    {
+        glfwSetWindowShouldClose( window, GL_TRUE );
     }
 }
 
-void error_callback( int error, const char* description ) {
+
+// --------------------------------------------------------- error-callback ---
+void error_callback( int error, const char* description )
+{
     fputs( description, stderr );
 }
 
-int main( int argc, char **argv ) {
+
+// ------------------------------------------------------------------- main ---
+int main( int argc, char **argv )
+{
     GLFWwindow* window;
-    char* screenshot_path = NULL;
 
     glfwSetErrorCallback( error_callback );
 
@@ -206,7 +288,7 @@ int main( int argc, char **argv ) {
     glfwWindowHint( GLFW_VISIBLE, GL_FALSE );
     glfwWindowHint( GLFW_RESIZABLE, GL_FALSE );
 
-    window = glfwCreateWindow( 800, 500, argv[0], NULL, NULL );
+    window = glfwCreateWindow( 500, 220, argv[0], NULL, NULL );
 
     if (!window)
     {
@@ -221,7 +303,6 @@ int main( int argc, char **argv ) {
     glfwSetWindowRefreshCallback( window, display );
     glfwSetKeyCallback( window, keyboard );
 
-    glewExperimental = GL_TRUE;
     GLenum err = glewInit();
     if (GLEW_OK != err)
     {
@@ -231,20 +312,23 @@ int main( int argc, char **argv ) {
     }
     fprintf( stderr, "Using GLEW %s\n", glewGetString(GLEW_VERSION) );
 
-    init({{5,500}});
+    init();
 
     glfwShowWindow( window );
-    reshape( window, 800, 500 );
+    reshape( window, 500, 220 );
 
-    while (!glfwWindowShouldClose( window ))
+    while(!glfwWindowShouldClose( window ))
     {
         display( window );
         glfwPollEvents( );
     }
 
-    glDeleteTextures( 1, &atlas->id );
-    atlas->id = 0;
-    texture_atlas_delete( atlas );
+    glDeleteProgram( bounds_shader );
+    glDeleteProgram( text_shader );
+    glDeleteTextures( 1, &font_manager->atlas->id );
+    font_manager->atlas->id = 0;
+    text_buffer_delete( buffer );
+    font_manager_delete( font_manager );
 
     glfwDestroyWindow( window );
     glfwTerminate( );
