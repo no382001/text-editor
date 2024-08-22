@@ -16,6 +16,8 @@ FetchContent_Declare(
     GIT_PROGRESS TRUE
 )
 
+FetchContent_MakeAvailable(raylib)
+
 set(CMAKE_BUILD_TYPE Debug)
 
 
