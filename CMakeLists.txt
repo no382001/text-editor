@@ -1,37 +1,31 @@
 cmake_minimum_required(VERSION 3.18)
 project(texteditor)
 
-# for freetype-gl
-set(OpenGL_GL_PREFERENCE GLVND)
-set(freetype-gl_BUILD_TESTS OFF)
-set(freetype-gl_BUILD_DEMOS OFF)
-set(freetype-gl_BUILD_MAKEFONT OFF)
-set(freetype-gl_BUILD_APIDOC OFF)
 
-add_subdirectory(freetype-gl)
+set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/_deps")
 
-include_directories(
-    freetype-gl
-    freetype-gl/demos
+include(FetchContent)
+set(FETCHCONTENT_QUIET FALSE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
+set(BUILD_GAMES    OFF CACHE BOOL "" FORCE) # don't build the supplied example games
+
+FetchContent_Declare(
+    raylib
+    GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
+    GIT_TAG "master"
+    GIT_PROGRESS TRUE
 )
 
 set(CMAKE_BUILD_TYPE Debug)
 
+
+
 add_executable(
     ${PROJECT_NAME}
-    main.cpp
-    freetype-gl/demos/mat4.c
-    freetype-gl/demos/shader.c
-)
+    main.c
+    editor.c)
 
 target_link_libraries(
     ${PROJECT_NAME}
-    freetype-gl
-    glfw
     m
-    GLU
-    GLEW
-    GL
-    freetype
-    fontconfig
-)
+raylib)
