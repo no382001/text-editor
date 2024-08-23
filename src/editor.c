@@ -36,6 +36,12 @@ int main() {
     printf("Line 2 not found.\n");
   }
 
+  line_node_append(l2,"This is appended after i searched for it i hope nothing bad happens");
+  line_node_append(l2," , this is pretty long, almost 128, like the chunk size");
+
+  printf("----\n");
+  document_print(&d);
+
   document_deinit(&d);
   buffer_pool_deinit();
 }

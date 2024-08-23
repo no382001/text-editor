@@ -7,7 +7,7 @@
 
 typedef struct Node {
   char *chunk;
-  char size;
+  size_t size;
   struct Node *prev;
   struct Node *next;
 } Node;
