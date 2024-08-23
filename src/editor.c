@@ -10,8 +10,11 @@ int main() {
 
   Document d;
   document_init(&d);
-  document_append(&d, "Hello World!");
+  document_append(&d, "first ");
+  document_append(&d, "second");
   document_newline(&d);
+  document_append(&d, "Hello ");
+  document_append(&d, "Hello ");
   document_append(&d, "Hello World!");
 
   document_print(&d);

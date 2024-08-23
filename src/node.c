@@ -57,7 +57,7 @@ void insert_into_node(Node **head, size_t index, const unsigned char *str) {
     Node *node = *head;
     size_t current_index = 0;
 
-    while (node && current_index + node->size <= index) {
+    while (node && current_index + node->size < index) {
       current_index += node->size;
       node = node->next;
     }
