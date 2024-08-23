@@ -1,2 +1,5 @@
 - when bufferpool runs out, it allocates twice the current capacity
 - implement editor traversal w/keys, and cursor position caching
+
+find . -name "*.[ch]" -exec clang-format -i {} \;
+valgrind --leak-check=full ./texteditor 
