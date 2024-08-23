@@ -1,5 +1,6 @@
 #pragma once
 #include "linenode.h"
+#include <stdio.h>
 
 typedef struct {
   LineNode **index;
@@ -22,3 +23,4 @@ void document_print(Document *d);
 void document_print_structure(Document *d);
 void document_build_index(Document *d, size_t gap);
 LineNode *document_find_line(Document *d, int i);
+void document_load_file(Document *d, char *filename);

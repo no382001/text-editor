@@ -215,7 +215,6 @@ void print_node(Node *head) {
     }
     node = node->next;
   }
-  printf("\n");
 }
 
 void free_node(Node *head) {

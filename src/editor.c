@@ -8,22 +8,74 @@
 #include <stdio.h>
 #include <string.h>
 
-int main() {
-  buffer_pool_init(POOL_SIZE);
+#include "raylib.h"
+#include <math.h>
 
+void handle_keys() {
+  if (IsKeyPressed(KEY_BACKSPACE)) {
+  }
+  if (IsKeyPressed(KEY_ENTER)) {
+  }
+  if (IsKeyPressed(KEY_DELETE)) {
+  }
+  if (IsKeyPressed(KEY_UP)) {
+  }
+  if (IsKeyPressed(KEY_DOWN)) {
+  }
+  if (IsKeyPressed(KEY_LEFT)) {
+  }
+  if (IsKeyPressed(KEY_RIGHT)) {
+  }
+  int key = GetCharPressed();
+  if (key > 0) {
+  }
+}
+
+void draw_text(Document *d) {
+  LineNode *ln = d->first_line;
+  int i = 0;
+  while (ln) {
+    Node *node = ln->head;
+    while (node) {
+      char buff[128];
+      sprintf(buff, node->chunk);
+      DrawText(buff, 190, 200 + i++ * 2, 20, LIGHTGRAY);
+      node = node->next;
+    }
+    ln = ln->next;
+  }
+}
+
+int main() {
+
+  const int screen_width = 1024;
+  const int screen_height = 768;
+  InitWindow(screen_width, screen_height, "tins");
+  SetTargetFPS(60);
+
+  /* ---- */
+  buffer_pool_init(POOL_SIZE);
   Document d;
   document_init(&d);
-  for (int i = 0; i < POOL_SIZE + POOL_SIZE;
-       i++) { // Allocate more than POOL_SIZE buffers
-    document_append(&d,
-                    "This is appended after i searched for it i hope nothing "
-                    "bad happens , this is pretty long, almost 128, like the "
-                    "chunk size, i hope it wont go in another");
-    document_newline(&d);
-  }
-
+  document_load_file(&d, "src/node.c");
   document_build_index(&d, 5);
+
+  while (!WindowShouldClose()) {
+
+    BeginDrawing();
+    ClearBackground(BLACK);
+
+    draw_text(&d);
+    handle_keys();
+
+    EndDrawing();
+  }
 
   document_deinit(&d);
   buffer_pool_deinit();
+
+  CloseAudioDevice();
+  CloseWindow();
+
+  return 0;
 }

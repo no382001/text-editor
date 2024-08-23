@@ -140,3 +140,23 @@ void document_print_structure(Document *d) {
     printf("\"\n");
   }
 }
+
+void document_load_file(Document *d, char* filename) {
+  FILE *file = fopen(filename, "r");
+  if (!file) {
+    perror("Failed to open file");
+    return;
+  }
+
+  char *line = NULL;
+  size_t len = 0;
+  size_t read;
+
+  while ((read = getline(&line, &len, file)) != -1) {
+    document_append(d, line);
+    document_newline(d);
+  }
+
+  free(line);
+  fclose(file);
+}
