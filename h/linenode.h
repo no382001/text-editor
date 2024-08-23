@@ -9,3 +9,4 @@ typedef struct LineNode {
 
 LineNode *new_line(LineNode *parent);
 void line_node_append(LineNode *ln, const char *text);
+void print_line_node(LineNode *ln);
