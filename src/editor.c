@@ -13,48 +13,16 @@ int main() {
 
   Document d;
   document_init(&d);
-  document_append(&d, "first ");
-  document_append(&d, "second");
-  document_newline(&d);
-  document_append(&d, "Hello ");
-  document_append(&d, "Hello ");
-  document_append(&d, "Hello World!");
-
-  document_build_index(&d, 2);
-  document_print(&d);
-
-  LineNode *l1 = document_find_line(&d, 1);
-  if (l1) {
-    printf("----\n");
-    print_node(l1->head);
-  } else {
-    printf("Line 1 not found.\n");
+  for (int i = 0; i < POOL_SIZE + POOL_SIZE;
+       i++) { // Allocate more than POOL_SIZE buffers
+    document_append(&d,
+                    "This is appended after i searched for it i hope nothing "
+                    "bad happens , this is pretty long, almost 128, like the "
+                    "chunk size, i hope it wont go in another");
+    document_newline(&d);
   }
 
-  LineNode *l2 = document_find_line(&d, 2);
-  if (l2) {
-    printf("----\n");
-    print_node(l2->head);
-  } else {
-    printf("Line 2 not found.\n");
-  }
-
-  line_node_append(
-      l2,
-      "This is appended after i searched for it i hope nothing bad happens");
-  line_node_append(l2,
-                   " , this is pretty long, almost 128, like the chunk size");
-
-  printf("----\n");
-  document_print_structure(&d);
-
-  line_node_delete(l2, 12, 10);
-  line_node_delete(l2, 12, 30);
-
-  line_node_replace(l2, 12, "Hellosadasdas");
-
-  printf("----\n");
-  document_print_structure(&d);
+  document_build_index(&d, 5);
 
   document_deinit(&d);
   buffer_pool_deinit();

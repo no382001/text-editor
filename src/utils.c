@@ -1,6 +1,6 @@
 #include "utils.h"
 
-static LogLevel current_log_level = INFO;
+static LogLevel current_log_level = WARNING;
 
 void log_message(LogLevel level, const char *format, ...) {
   if (level > current_log_level) {
