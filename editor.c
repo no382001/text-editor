@@ -4,11 +4,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
+
+BufferPool pre-allocates memory for the strings reducing syscalls significantly
+
+*/
+
 #define POOL_SIZE 128
 #define BUFFER_SIZE 512
-
-#define CHUNK_SIZE 128
-#define MERGE_THRESHOLD 32
 
 typedef struct {
   char *buffer;
@@ -61,6 +64,12 @@ void buffer_pool_free(void *ptr) {
     }
   }
 }
+
+/*
+
+Merging tree structure to store the strings themselves
+
+*/
 
 #define CHUNK_SIZE 128
 #define MIN_SIZE 32
@@ -212,7 +221,7 @@ void delete (Node **head, size_t index, size_t length) {
   }
 }
 
-void print_list(Node *head) {
+void print_node(Node *head) {
   Node *node = head;
   while (node) {
     for (int i = 0; i < node->size; i++) {
@@ -223,7 +232,7 @@ void print_list(Node *head) {
   printf("\n");
 }
 
-void free_list(Node *head) {
+void free_node(Node *head) {
   Node *node = head;
   while (node) {
     Node *next = node->next;
@@ -232,24 +241,85 @@ void free_list(Node *head) {
   }
 }
 
+typedef struct LineNode {
+    Node *head;
+    struct LineNode *next;
+    struct LineNode *prev;
+} LineNode;
+
+typedef struct Document {
+    LineNode *first_line;
+    LineNode *last_line;
+    size_t line_count;
+} Document;
+
+LineNode* new_line(LineNode* parent){
+  LineNode* ln = malloc(sizeof(LineNode));
+  ln->head = create_node();
+  ln->next = NULL;
+  ln->prev = parent;
+}
+
+void document_init(Document* d){
+  d->first_line = new_line(NULL);
+  d->last_line = d->first_line;
+  d->line_count = 1;
+}
+
+void document_deinit(Document* d) {
+    LineNode* current_line = d->first_line;
+    while (current_line) {
+        Node* current_node = current_line->head;
+        while (current_node) {
+            Node* next_node = current_node->next;
+            buffer_pool_free(current_node->chunk);
+            free(current_node);
+            current_node = next_node;
+        }
+
+        LineNode* next_line = current_line->next;
+        free(current_line);
+        current_line = next_line;
+    }
+
+    d->first_line = NULL;
+    d->last_line = NULL;
+    d->line_count = 0;
+}
+
+
+void node_append(LineNode* ln,const char* text) {
+  insert(&ln->head,ln->head->size,text);
+}
+
+void document_append(Document* d, const char* text){
+  node_append(d->last_line,text);
+}
+
+void document_newline(Document* d){
+  d->last_line->next = new_line(d->last_line);
+  d->last_line = d->last_line->next;
+}
+
+void document_print(Document* d){
+  LineNode* ln = d->first_line;
+  while (ln){
+    print_node(ln->head);
+    ln = ln->next;
+  }
+}
+
 int main() {
   buffer_pool_init(POOL_SIZE);
 
-  Node *head = create_node();
-  insert(&head, 0, (unsigned char *)"Hello");
-  insert(&head, 5, (unsigned char *)"This is a test of merge nodes.");
-  print_list(head);
+  Document d;
+  document_init(&d);
+  document_append(&d,"Hello World!");
+  document_newline(&d);
+  document_append(&d,"Hello World!");
 
-  // orce a split to create multiple nodes
-  insert(&head, 35,
-         (unsigned char *)" This will cause multiple nodes to be created.");
-  print_list(head);
+  document_print(&d);
 
-  // delete enough characters to cause a merge between nodes
-  delete (&head, 5, 30); // remove part of "This is a test of merge nodes."
-  print_list(
-      head); // xxpect "Hello This will cause multiple nodes to be created."
-
-  free_list(head);
+  document_deinit(&d);
   buffer_pool_deinit();
 }

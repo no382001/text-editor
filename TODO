@@ -1,0 +1,2 @@
+- when bufferpool runs out, it allocates twice the current capacity
+- implement editor traversal w/keys, and cursor position caching
