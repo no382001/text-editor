@@ -8,5 +8,7 @@ typedef struct LineNode {
 } LineNode;
 
 LineNode *new_line(LineNode *parent);
-void line_node_append(LineNode *ln, const char *text);
 void print_line_node(LineNode *ln);
+void line_node_append(LineNode *ln, const char *text);
+void line_node_delete(LineNode *ln, size_t index, size_t length);
+void line_node_replace(LineNode *ln, size_t index, const char *text);

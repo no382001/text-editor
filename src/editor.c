@@ -48,8 +48,10 @@ int main() {
   printf("----\n");
   document_print_structure(&d);
 
-  delete_from_node(l2, 12, 10);
-  delete_from_node(l2, 12, 30);
+  line_node_delete(l2, 12, 10);
+  line_node_delete(l2, 12, 30);
+
+  line_node_replace(l2, 12, "Hellosadasdas");
 
   printf("----\n");
   document_print_structure(&d);
