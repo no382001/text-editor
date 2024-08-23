@@ -53,57 +53,107 @@ void merge_nodes(Node *node) {
   }
 }
 
-void insert_into_node(Node **head, size_t index, const unsigned char *str) {
-  size_t len = strlen((const char *)str);
+void modify_node(Node **head, size_t index, const char *str, size_t len,
+                 ModificationType mod_type) {
   size_t str_index = 0;
 
-  log_and_execute(DEBUG, "\n --> node: ", print_node(*head));
-  log_message(DEBUG, "insert_into_node idx:%ld, size:%ld\n", index, len);
-
-  while (str_index < len) {
+  while (str_index < len || (mod_type == DELETION && len > 0)) {
     Node *node = *head;
     size_t current_index = 0;
 
+    // traverse to find the correct node and index within the node
     while (node && current_index + node->size < index) {
       current_index += node->size;
       node = node->next;
     }
 
     if (!node) {
-      node = create_node();
-      if (*head == NULL) {
-        *head = node;
-      } else {
-        Node *tail = *head;
-        while (tail->next) {
-          tail = tail->next;
+      // if no node is found, create a new node (for insertion)
+      if (mod_type == INSERTION) {
+        node = create_node();
+        if (*head == NULL) {
+          *head = node;
+        } else {
+          Node *tail = *head;
+          while (tail->next) {
+            tail = tail->next;
+          }
+          tail->next = node;
+          node->prev = tail;
         }
-        tail->next = node;
-        node->prev = tail;
+      } else {
+        // if deletion reaches beyond available nodes, break
+        break;
       }
     }
 
     size_t local_index = index - current_index;
     size_t space_available = CHUNK_SIZE - node->size;
-    size_t insert_length = len - str_index;
 
-    if (insert_length > space_available) {
-      insert_length = space_available;
-    }
+    if (mod_type == INSERTION) {
+      // calculate how much we can insert in this node
+      size_t insert_length = len - str_index;
+      if (insert_length > space_available) {
+        insert_length = space_available;
+      }
 
-    memmove(node->chunk + local_index + insert_length,
-            node->chunk + local_index, node->size - local_index);
-    memcpy(node->chunk + local_index, str + str_index, insert_length);
-    node->size += insert_length;
-    str_index += insert_length;
-    index += insert_length;
+      // move existing data to make space for new data
+      memmove(node->chunk + local_index + insert_length,
+              node->chunk + local_index, node->size - local_index);
+      memcpy(node->chunk + local_index, str + str_index, insert_length);
+      node->size += insert_length;
+      str_index += insert_length;
+      index += insert_length;
 
-    log_and_execute(DEBUG, "\n --> new: ", print_node(*head));
+      if (node->size >= CHUNK_SIZE) {
+        split_node(node);
+      }
+    } else if (mod_type == DELETION) {
+      // calculate how much we can delete in this node
+      size_t delete_length = len;
+      if (local_index + delete_length > node->size) {
+        delete_length = node->size - local_index;
+      }
 
-    if (node->size >= CHUNK_SIZE) {
-      split_node(node);
+      // shift data to remove the specified characters
+      memmove(node->chunk + local_index,
+              node->chunk + local_index + delete_length,
+              node->size - local_index - delete_length);
+      node->size -= delete_length;
+      len -= delete_length;
+
+      // if the node is too small, attempt to merge with adjacent nodes
+      if (node->size < MIN_SIZE) {
+        if (node->prev && node->prev->size + node->size <= CHUNK_SIZE) {
+          merge_nodes(node->prev);
+          node = node->prev;
+        } else if (node->next && node->size + node->next->size <= CHUNK_SIZE) {
+          merge_nodes(node);
+        }
+      }
+
+      if (node->size == 0) {
+        // remove the node if it's empty
+        if (node->prev) {
+          node->prev->next = node->next;
+        } else {
+          *head = node->next;
+        }
+        if (node->next) {
+          node->next->prev = node->prev;
+        }
+        free(node);
+      }
     }
   }
+}
+
+void insert_into_node(Node **head, size_t index, const char *str) {
+  modify_node(head, index, str, strlen(str), INSERTION);
+}
+
+void delete_from_node(Node **head, size_t index, size_t length) {
+  modify_node(head, index, NULL, length, DELETION);
 }
 
 void delete_node(Node **head, size_t index, size_t length) {

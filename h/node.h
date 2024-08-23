@@ -12,10 +12,15 @@ typedef struct Node {
   struct Node *next;
 } Node;
 
+typedef enum { INSERTION, DELETION } ModificationType;
+
 Node *create_node();
 void split_node(Node *node);
 void merge_nodes(Node *node);
-void insert_into_node(Node **head, size_t index, const unsigned char *str);
+void modify_node(Node **head, size_t index, const char *str, size_t len,
+                 ModificationType mod_type);
+void insert_into_node(Node **head, size_t index, const char *str);
+void delete_from_node(Node **head, size_t index, size_t length);
 void delete_node(Node **head, size_t index, size_t length);
 void print_node(Node *head);
 void free_node(Node *head);

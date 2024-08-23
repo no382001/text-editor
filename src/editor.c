@@ -15,7 +15,7 @@ int main() {
   document_init(&d);
   document_append(&d, "first ");
   document_append(&d, "second");
-  document_newline(&d); // Line 1
+  document_newline(&d);
   document_append(&d, "Hello ");
   document_append(&d, "Hello ");
   document_append(&d, "Hello World!");
@@ -46,7 +46,10 @@ int main() {
                    " , this is pretty long, almost 128, like the chunk size");
 
   printf("----\n");
-  document_print(&d);
+  document_print_structure(&d);
+
+  delete_from_node(l2, 12, 10);
+  delete_from_node(l2, 12, 30);
 
   printf("----\n");
   document_print_structure(&d);
