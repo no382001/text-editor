@@ -11,5 +11,6 @@ add_executable(
     src/node.c
     src/linenode.c
     src/document.c
+    src/utils.c
     src/editor.c
 )

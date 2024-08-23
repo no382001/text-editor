@@ -2,8 +2,11 @@
 #include "document.h"
 #include "linenode.h"
 #include "node.h"
-#include <stdio.h>
+#include "utils.h"
+
 #include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 int main() {
   buffer_pool_init(POOL_SIZE);
@@ -41,6 +44,9 @@ int main() {
 
   printf("----\n");
   document_print(&d);
+
+  printf("----\n");
+  document_print_structure(&d);
 
   document_deinit(&d);
   buffer_pool_deinit();

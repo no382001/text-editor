@@ -1,5 +1,7 @@
 #include "node.h"
 #include "bufferpool.h"
+#include "utils.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -19,7 +21,7 @@ Node *create_node() {
 }
 
 void split_node(Node *node) {
-  printf("[INFO] node split!\n");
+  log_message(DEBUG,"node split!\n");
   Node *new_node = create_node();
   new_node->size = SPLIT_SIZE;
 
@@ -37,7 +39,7 @@ void split_node(Node *node) {
 
 void merge_nodes(Node *node) {
   if (node->next && node->size + node->next->size <= CHUNK_SIZE) {
-    printf("[INFO] nodes merged!\n");
+    log_message(DEBUG,"node merge!\n");
     Node *next_node = node->next;
     memcpy(node->chunk + node->size, next_node->chunk, next_node->size);
     node->size += next_node->size;
@@ -55,9 +57,8 @@ void insert_into_node(Node **head, size_t index, const unsigned char *str) {
   size_t len = strlen((const char *)str);
   size_t str_index = 0;
 
-  printf("[INFO]\n --> node: ");
-  print_node(*head);
-  printf("[INFO] insert_into_node idx:%ld, size:%ld\n",index,len);
+  log_and_execute(DEBUG,"\n --> node: ",print_node(*head));
+  log_message(DEBUG,"insert_into_node idx:%ld, size:%ld\n",index,len);
 
   while (str_index < len) {
     Node *node = *head;
@@ -97,8 +98,8 @@ void insert_into_node(Node **head, size_t index, const unsigned char *str) {
     str_index += insert_length;
     index += insert_length;
     
-    printf("[INFO]\n --> new: ");
-    print_node(*head);
+    log_and_execute(DEBUG,"\n --> new: ",print_node(*head));
+    
     if (node->size >= CHUNK_SIZE) {
       split_node(node);
     }

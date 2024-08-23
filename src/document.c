@@ -1,5 +1,7 @@
 #include "document.h"
 #include "bufferpool.h"
+#include "utils.h"
+
 #include <stdio.h>
 
 void document_init(Document *d) {
@@ -73,9 +75,9 @@ void document_build_index(Document *d, size_t gap) {
     line_number++;
   }
 
-  printf("[INFO] index built!\n");
+  log_message(DEBUG,"index built!\n");
   for (size_t j = 0; j < d->line_index.index_size; j++) {
-    printf("[INFO] index[%zu] -> %s\n", j, d->line_index.index[j]->head->chunk);
+    log_message(DEBUG,"index[%zu] -> %s\n", j, d->line_index.index[j]->head->chunk);
   }
 }
 
@@ -97,4 +99,42 @@ LineNode *document_find_line(Document *d, int i) {
   }
 
   return ln;
+}
+
+void document_print_structure(Document *d) {
+    printf("Document Structure:\n");
+    printf("Total lines: %zu\n", d->line_count);
+    
+    LineNode *ln = d->first_line;
+    int line_number = 1;
+    
+    while (ln) {
+        printf("Line %d [LineNode]:\n", line_number++);
+        
+        Node *node = ln->head;
+        int node_number = 1;
+        
+        while (node) {
+            printf("  Node %d [Node]: size = %zu, content = \"", node_number++, node->size);
+            for (size_t i = 0; i < node->size; ++i) {
+                printf("%c", node->chunk[i]);
+            }
+            printf("\"\n");
+            node = node->next;
+        }
+        
+        ln = ln->next;
+    }
+    
+    printf("\nDocument Index Structure:\n");
+    for (size_t i = 0; i < d->line_index.index_size; i++) {
+        printf("Index %zu -> LineNode starting with: \"", i);
+        Node *node = d->line_index.index[i]->head;
+        if (node) {
+            for (size_t j = 0; j < node->size; ++j) {
+                printf("%c", node->chunk[j]);
+            }
+        }
+        printf("\"\n");
+    }
 }
