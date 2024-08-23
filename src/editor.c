@@ -4,9 +4,9 @@
 #include "node.h"
 #include "utils.h"
 
-#include <string.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 int main() {
   buffer_pool_init(POOL_SIZE);
@@ -39,8 +39,11 @@ int main() {
     printf("Line 2 not found.\n");
   }
 
-  line_node_append(l2,"This is appended after i searched for it i hope nothing bad happens");
-  line_node_append(l2," , this is pretty long, almost 128, like the chunk size");
+  line_node_append(
+      l2,
+      "This is appended after i searched for it i hope nothing bad happens");
+  line_node_append(l2,
+                   " , this is pretty long, almost 128, like the chunk size");
 
   printf("----\n");
   document_print(&d);
