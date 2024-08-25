@@ -63,7 +63,7 @@ void handle_keys() {
   }
 }
 
-void draw_text(Document *d) {
+void draw_text(Document *d,Font *font) {
   LineNode *ln = d->first_line;
   int i = 0;
   while (ln) {
@@ -72,8 +72,8 @@ void draw_text(Document *d) {
       char buff[128];
       sprintf(buff, "%.*s", node->size, node->chunk);
 
-      DrawText(buff, 20, 200 + i++ * (font_size + line_padding) - scroll_offset,
-               font_size, LIGHTGRAY);
+      DrawTextEx(*font, buff, (Vector2){20, 200 + i++ * (font_size + line_padding) - scroll_offset},
+               font_size,0, LIGHTGRAY);
       node = node->next;
     }
     ln = ln->next;
@@ -86,6 +86,8 @@ int main() {
   const int screen_height = 768;
   InitWindow(screen_width, screen_height, "tins");
   SetTargetFPS(60);
+
+  Font fontTtf = LoadFontEx("Elronmonospace.ttf", 32, 0, 250);
 
   /* ---- */
   buffer_pool_init(POOL_SIZE);
@@ -103,7 +105,7 @@ int main() {
     BeginDrawing();
     ClearBackground(BLACK);
 
-    draw_text(&d);
+    draw_text(&d,&fontTtf);
     handle_keys();
 
     EndDrawing();
