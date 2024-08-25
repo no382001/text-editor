@@ -2,6 +2,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
+#include <unistd.h>
 
 typedef enum {
   INFO,
@@ -39,3 +41,13 @@ LogLevel get_current_log_level();
   log_message_impl(level, __RELATIVE_FILE__, __LINE__, message, ##__VA_ARGS__)
 
 //
+
+static void print_path() {
+  char cwd[PATH_MAX];
+
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    printf("Current working directory: %s\n", cwd);
+  } else {
+    perror("getcwd() error");
+  }
+}

@@ -1,4 +1,5 @@
 #include "bufferpool.h"
+#include "cursor.h"
 #include "document.h"
 #include "linenode.h"
 #include "node.h"
@@ -11,71 +12,51 @@
 #include "raylib.h"
 #include <math.h>
 
-#include <limits.h>
-#include <unistd.h>
-
-void print_path() {
-  char cwd[PATH_MAX];
-
-  if (getcwd(cwd, sizeof(cwd)) != NULL) {
-    printf("Current working directory: %s\n", cwd);
-  } else {
-    perror("getcwd() error");
-  }
-}
-
 int scroll_offset = 0;
 int font_size = 20;
 int line_padding = 2;
 
-void handle_keys() {
-  if (IsKeyPressed(KEY_BACKSPACE)) {
-  }
-  if (IsKeyPressed(KEY_ENTER)) {
-  }
-  if (IsKeyPressed(KEY_DELETE)) {
-  }
-  if (IsKeyPressed(KEY_UP)) {
-    scroll_offset -= font_size + line_padding;
-    if (scroll_offset < 0) {
-      scroll_offset = 0;
-    }
-  }
-  if (IsKeyPressed(KEY_DOWN)) {
-    scroll_offset += font_size + line_padding;
-  }
-  if (IsKeyPressed(KEY_LEFT)) {
-  }
-  if (IsKeyPressed(KEY_RIGHT)) {
-  }
-  if (IsKeyPressed(KEY_PAGE_UP)) {
-    scroll_offset -= (font_size + line_padding) * 10;
-    if (scroll_offset < 0) {
-      scroll_offset = 0;
-    }
-  }
-  if (IsKeyPressed(KEY_PAGE_DOWN)) {
-    scroll_offset += (font_size + line_padding) * 10;
-  }
-  int key = GetCharPressed();
-  if (key > 0) {
-    //
-  }
-}
+extern Cursor cursor;
 
-void draw_text(Document *d,Font *font) {
+void draw(Document *d, Font *font) {
   LineNode *ln = d->first_line;
-  int i = 0;
+  int line_number = 0;
+
   while (ln) {
     Node *node = ln->head;
-    while (node) {
-      char buff[128];
-      sprintf(buff, "%.*s", node->size, node->chunk);
+    int column = 0;
+    int x = 10;
+    bool cursor_drawn = false;
 
-      DrawTextEx(*font, buff, (Vector2){20, 200 + i++ * (font_size + line_padding) - scroll_offset},
-               font_size,0, LIGHTGRAY);
+    while (node) {
+      for (int i = 0; i < node->size; i++) {
+        char character[2] = {node->chunk[i], '\0'};
+        Vector2 position = {x, 200 + line_number * (font_size + line_padding) -
+                                   scroll_offset};
+
+        DrawTextEx(*font, character, position, font_size, 0, LIGHTGRAY);
+
+        // check if this is where the cursor should be drawn
+        if (line_number == cursor.line && column == cursor.column) {
+          DrawRectangle(position.x, position.y, 2, font_size, RED);
+          cursor_drawn = true;
+        }
+
+        x += MeasureTextEx(*font, character, font_size, 0).x;
+        column++;
+      }
       node = node->next;
     }
+
+    // fix this!
+    // if the cursor is at the end of the line, draw it after the last character
+    if (line_number == cursor.line && !cursor_drawn) {
+      Vector2 position = {x, 200 + line_number * (font_size + line_padding) -
+                                 scroll_offset};
+      DrawRectangle(position.x, position.y, 2, font_size, RED);
+    }
+
+    line_number++;
     ln = ln->next;
   }
 }
@@ -97,16 +78,14 @@ int main() {
   document_load_file(&d, "src/node.c");
   document_build_index(&d, 5);
 
-  document_print(&d);
-
   /**/
   while (!WindowShouldClose()) {
 
     BeginDrawing();
     ClearBackground(BLACK);
 
-    draw_text(&d,&fontTtf);
-    handle_keys();
+    draw(&d, &fontTtf);
+    handle_keys(&d);
 
     EndDrawing();
   }

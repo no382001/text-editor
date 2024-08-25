@@ -30,6 +30,7 @@ add_executable(
     src/document.c
     src/utils.c
     src/editor.c
+    src/cursor.c
     )
     
 target_include_directories(${PROJECT_NAME} PRIVATE
