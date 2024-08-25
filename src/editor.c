@@ -11,6 +11,19 @@
 #include "raylib.h"
 #include <math.h>
 
+#include <limits.h>
+#include <unistd.h>
+
+void print_path() {
+  char cwd[PATH_MAX];
+
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    printf("Current working directory: %s\n", cwd);
+  } else {
+    perror("getcwd() error");
+  }
+}
+
 void handle_keys() {
   if (IsKeyPressed(KEY_BACKSPACE)) {
   }
@@ -50,16 +63,19 @@ int main() {
 
   const int screen_width = 1024;
   const int screen_height = 768;
-  InitWindow(screen_width, screen_height, "tins");
-  SetTargetFPS(60);
+  //InitWindow(screen_width, screen_height, "tins");
+  //SetTargetFPS(60);
 
   /* ---- */
   buffer_pool_init(POOL_SIZE);
   Document d;
   document_init(&d);
+  print_path();
   document_load_file(&d, "src/node.c");
   document_build_index(&d, 5);
 
+  //document_print_structure(&d);
+  /** /
   while (!WindowShouldClose()) {
 
     BeginDrawing();
@@ -73,9 +89,9 @@ int main() {
 
   document_deinit(&d);
   buffer_pool_deinit();
-
   CloseAudioDevice();
   CloseWindow();
+  /* */
 
   return 0;
 }

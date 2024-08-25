@@ -76,10 +76,6 @@ void document_build_index(Document *d, size_t gap) {
   }
 
   log_message(DEBUG, "index built!\n");
-  for (size_t j = 0; j < d->line_index.index_size; j++) {
-    log_message(DEBUG, "index[%zu] -> %s\n", j,
-                d->line_index.index[j]->head->chunk);
-  }
 }
 
 LineNode *document_find_line(Document *d, int i) {
@@ -116,8 +112,8 @@ void document_print_structure(Document *d) {
     int node_number = 1;
 
     while (node) {
-      printf("  Node %d [Node]: size = %zu, content = \"", node_number++,
-             node->size);
+      printf("  Node %d [Node]: size = %ld, rsize = %ld, content = \"", node_number++,
+             node->size,strlen(node->chunk));
       for (size_t i = 0; i < node->size; ++i) {
         printf("%c", node->chunk[i]);
       }
@@ -153,6 +149,9 @@ void document_load_file(Document *d, char* filename) {
   size_t read;
 
   while ((read = getline(&line, &len, file)) != -1) {
+    if (line[read - 1] == '\n') {
+      line[read - 1] = '\0';
+    }
     document_append(d, line);
     document_newline(d);
   }

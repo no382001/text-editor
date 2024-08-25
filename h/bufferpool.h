@@ -13,7 +13,7 @@ typedef struct {
 
 typedef struct {
   BufferPoolItem *items;
-  size_t count;
+  size_t used_count;
   size_t capacity;
 } BufferPool;
 

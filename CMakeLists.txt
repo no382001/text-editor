@@ -19,6 +19,9 @@ FetchContent_MakeAvailable(raylib)
 
 set(CMAKE_BUILD_TYPE Debug)
 
+string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
+add_compile_definitions(SOURCE_PATH_SIZE=${SOURCE_PATH_SIZE})
+
 add_executable(
     ${PROJECT_NAME}
     src/bufferpool.c
