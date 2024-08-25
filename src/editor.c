@@ -24,6 +24,10 @@ void print_path() {
   }
 }
 
+int scroll_offset = 0;
+int font_size = 20;
+int line_padding = 2;
+
 void handle_keys() {
   if (IsKeyPressed(KEY_BACKSPACE)) {
   }
@@ -32,15 +36,30 @@ void handle_keys() {
   if (IsKeyPressed(KEY_DELETE)) {
   }
   if (IsKeyPressed(KEY_UP)) {
+    scroll_offset -= font_size + line_padding;
+    if (scroll_offset < 0) {
+      scroll_offset = 0;
+    }
   }
   if (IsKeyPressed(KEY_DOWN)) {
+    scroll_offset += font_size + line_padding;
   }
   if (IsKeyPressed(KEY_LEFT)) {
   }
   if (IsKeyPressed(KEY_RIGHT)) {
   }
+  if (IsKeyPressed(KEY_PAGE_UP)) {
+    scroll_offset -= (font_size + line_padding) * 10;
+    if (scroll_offset < 0) {
+      scroll_offset = 0;
+    }
+  }
+  if (IsKeyPressed(KEY_PAGE_DOWN)) {
+    scroll_offset += (font_size + line_padding) * 10;
+  }
   int key = GetCharPressed();
   if (key > 0) {
+    //
   }
 }
 
@@ -51,8 +70,10 @@ void draw_text(Document *d) {
     Node *node = ln->head;
     while (node) {
       char buff[128];
-      sprintf(buff, node->chunk);
-      DrawText(buff, 190, 200 + i++ * 2, 20, LIGHTGRAY);
+      sprintf(buff, "%.*s", node->size, node->chunk);
+
+      DrawText(buff, 20, 200 + i++ * (font_size + line_padding) - scroll_offset,
+               font_size, LIGHTGRAY);
       node = node->next;
     }
     ln = ln->next;
@@ -63,8 +84,8 @@ int main() {
 
   const int screen_width = 1024;
   const int screen_height = 768;
-  //InitWindow(screen_width, screen_height, "tins");
-  //SetTargetFPS(60);
+  InitWindow(screen_width, screen_height, "tins");
+  SetTargetFPS(60);
 
   /* ---- */
   buffer_pool_init(POOL_SIZE);
@@ -74,8 +95,9 @@ int main() {
   document_load_file(&d, "src/node.c");
   document_build_index(&d, 5);
 
-  //document_print_structure(&d);
-  /** /
+  document_print(&d);
+
+  /**/
   while (!WindowShouldClose()) {
 
     BeginDrawing();

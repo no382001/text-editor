@@ -27,6 +27,7 @@ void split_node(Node *node) {
 
   memcpy(new_node->chunk, node->chunk + SPLIT_SIZE, SPLIT_SIZE);
   node->size = SPLIT_SIZE;
+  // null term?
 
   new_node->next = node->next;
   if (new_node->next) {
@@ -37,7 +38,7 @@ void split_node(Node *node) {
   node->next = new_node;
 }
 
-void free_node(Node* n){
+void free_node(Node *n) {
   buffer_pool_free(n->chunk);
   free(n);
 }
@@ -47,13 +48,15 @@ void merge_nodes(Node *node) {
     log_message(DEBUG, "node merge!\n");
     Node *next_node = node->next;
     memcpy(node->chunk + node->size, next_node->chunk, next_node->size);
+    // null term?
+
     node->size += next_node->size;
 
     node->next = next_node->next;
     if (node->next) {
       node->next->prev = node;
     }
-    
+
     free_node(next_node);
   }
 }
@@ -107,6 +110,8 @@ void modify_node(Node **head, size_t index, const char *str, size_t len,
               node->chunk + local_index, node->size - local_index);
       memcpy(node->chunk + local_index, str + str_index, insert_length);
       node->size += insert_length;
+      // null term?
+
       str_index += insert_length;
       index += insert_length;
 

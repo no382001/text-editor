@@ -35,14 +35,16 @@ void buffer_pool_deinit() {
 char *buffer_pool_alloc(size_t size) {
   for (size_t i = 0; i < pool.capacity; ++i) {
     if (!pool.items[i].in_use && pool.items[i].size >= size) {
-      log_message(DEBUG, "[1] buffer pool allocation pool.in_use: %d of %d\n",pool.used_count,pool.capacity);
+      log_message(DEBUG, "[1] buffer pool allocation pool.in_use: %d of %d\n",
+                  pool.used_count, pool.capacity);
       pool.items[i].in_use = true;
       pool.used_count++;
       assert(pool.items[i].buffer);
       return pool.items[i].buffer;
     }
   }
-  log_message(WARNING, "[1] bufferpool is out of memory cap:%d\n", pool.capacity);
+  log_message(WARNING, "[1] bufferpool is out of memory cap:%d\n",
+              pool.capacity);
 
   // there was no more space, so do this
   size_t new_capacity = pool.capacity * 2;
@@ -65,13 +67,13 @@ char *buffer_pool_alloc(size_t size) {
   }
 
   pool.capacity = new_capacity;
-  
-  log_message(DEBUG,"[3] retrying allocation after realloc\n");
+
+  log_message(DEBUG, "[3] retrying allocation after realloc\n");
   return buffer_pool_alloc(size); // retry
 }
 
 void buffer_pool_free(void *ptr) {
-  log_message(DEBUG, "buffer pool free pool.in_use: %d\n",pool.used_count);
+  log_message(DEBUG, "buffer pool free pool.in_use: %d\n", pool.used_count);
   for (size_t i = 0; i < pool.capacity; ++i) {
     if (pool.items[i].buffer == ptr) {
       pool.items[i].in_use = false;

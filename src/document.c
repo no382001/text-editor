@@ -51,6 +51,7 @@ void document_print(Document *d) {
   while (ln) {
     print_node(ln->head);
     ln = ln->next;
+    printf("\n");
   }
 }
 
@@ -112,8 +113,8 @@ void document_print_structure(Document *d) {
     int node_number = 1;
 
     while (node) {
-      printf("  Node %d [Node]: size = %ld, rsize = %ld, content = \"", node_number++,
-             node->size,strlen(node->chunk));
+      printf("  Node %d [Node]: size = %ld, rsize = %ld, content = \"",
+             node_number++, node->size, strlen(node->chunk));
       for (size_t i = 0; i < node->size; ++i) {
         printf("%c", node->chunk[i]);
       }
@@ -137,7 +138,7 @@ void document_print_structure(Document *d) {
   }
 }
 
-void document_load_file(Document *d, char* filename) {
+void document_load_file(Document *d, char *filename) {
   FILE *file = fopen(filename, "r");
   if (!file) {
     perror("Failed to open file");
