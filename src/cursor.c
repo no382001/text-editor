@@ -1,5 +1,6 @@
 
 #include "cursor.h"
+#include "utils.h"
 #include "raylib.h"
 
 Cursor cursor = {0, 0}; // top left
@@ -7,6 +8,7 @@ Cursor cursor = {0, 0}; // top left
 // dont go over the column
 static void cursor_col_bound_check(Document *d) {
   LineNode *line = document_find_line(d, cursor.line);
+  chk_ptr(line);
   if (cursor.column > line->head->size) {
     cursor.column = line->head->size;
   }
@@ -34,12 +36,14 @@ static void key_left(Document *d) {
     // go up a line to the end of the prev col
     cursor.line--;
     LineNode *line = document_find_line(d, cursor.line);
+    chk_ptr(line);
     cursor.column = line->head->size;
   }
 }
 
 static void key_right(Document *d) {
   LineNode *line = document_find_line(d, cursor.line);
+  chk_ptr(line);
   if (cursor.column < line->head->size) {
     // normal
     cursor.column++;

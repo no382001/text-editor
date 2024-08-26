@@ -1,10 +1,11 @@
 #include "linenode.h"
-
+#include "utils.h"
 #include <string.h>
 
 LineNode *new_line(LineNode *parent) {
   LineNode *ln = malloc(sizeof(LineNode));
   ln->head = create_node();
+  chk_ptr(ln->head);
   ln->next = NULL;
   ln->prev = parent;
 }

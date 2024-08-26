@@ -19,7 +19,7 @@ void buffer_pool_init(size_t initial_capacity) {
     // this doesnt seem right BUFFER_SIZE for sure? it POOL_SIZE is the max for
     // a split e.g.
     pool.items[i].buffer = (char *)malloc(BUFFER_SIZE);
-    assert(pool.items[i].buffer);
+    chk_ptr(pool.items[i].buffer);
     pool.items[i].size = BUFFER_SIZE;
     pool.items[i].in_use = false;
   }

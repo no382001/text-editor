@@ -31,7 +31,8 @@ add_executable(
     src/utils.c
     src/editor.c
     src/cursor.c
-    )
+    src/main.c
+)
     
 target_include_directories(${PROJECT_NAME} PRIVATE
     h

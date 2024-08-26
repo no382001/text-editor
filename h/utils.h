@@ -1,8 +1,8 @@
 #pragma once
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
 #include <unistd.h>
 
 typedef enum {
@@ -51,3 +51,13 @@ static void print_path() {
     perror("getcwd() error");
   }
 }
+
+#define chk_ptr(p)                                                             \
+  do {                                                                         \
+    if (!p) {                                                                  \
+      log_message(ERROR, "chk_ptr failed\n");                                  \
+      exit(1);                                                                 \
+    }                                                                          \
+  } while (0)
+
+//

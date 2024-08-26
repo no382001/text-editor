@@ -6,6 +6,7 @@
 
 void document_init(Document *d) {
   d->first_line = new_line(NULL);
+  chk_ptr(d->first_line);
   d->last_line = d->first_line;
   d->line_count = 1;
 
@@ -42,6 +43,7 @@ void document_append(Document *d, const char *text) {
 
 void document_newline(Document *d) {
   d->last_line->next = new_line(d->last_line);
+  chk_ptr(d->last_line->next);
   d->last_line = d->last_line->next;
   d->line_count++;
 }

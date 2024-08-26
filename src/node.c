@@ -23,6 +23,7 @@ Node *create_node() {
 void split_node(Node *node) {
   log_message(DEBUG, "node split!\n");
   Node *new_node = create_node();
+  chk_ptr(new_node);
   new_node->size = SPLIT_SIZE;
 
   memcpy(new_node->chunk, node->chunk + SPLIT_SIZE, SPLIT_SIZE);
@@ -79,6 +80,7 @@ void modify_node(Node **head, size_t index, const char *str, size_t len,
       // if no node is found, create a new node (for insertion)
       if (mod_type == INSERTION) {
         node = create_node();
+        chk_ptr(node);
         if (*head == NULL) {
           *head = node;
         } else {
