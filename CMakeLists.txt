@@ -17,6 +17,15 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(raylib)
 
+FetchContent_Declare(
+    unity
+    GIT_REPOSITORY "https://github.com/ThrowTheSwitch/Unity.git"
+    GIT_TAG "master"
+    GIT_PROGRESS TRUE
+)
+
+FetchContent_MakeAvailable(unity)
+
 set(CMAKE_BUILD_TYPE Debug)
 
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
@@ -37,6 +46,26 @@ add_executable(
 target_include_directories(${PROJECT_NAME} PRIVATE
     h
     ${raylib_SOURCE_DIR}/src
+    ${unity_SOURCE_DIR}/src
 )
 
-target_link_libraries(${PROJECT_NAME} m raylib)
+target_link_libraries(${PROJECT_NAME} m raylib unity)
+
+add_executable(
+    ${PROJECT_NAME}_test
+    src/bufferpool.c
+    src/node.c
+    src/linenode.c
+    src/document.c
+    src/utils.c
+    src/tests.c
+)
+    
+target_include_directories(${PROJECT_NAME}_test PRIVATE
+    h
+    ${raylib_SOURCE_DIR}/src
+    ${unity_SOURCE_DIR}/src
+)
+
+target_link_libraries(${PROJECT_NAME}_test m unity)
+

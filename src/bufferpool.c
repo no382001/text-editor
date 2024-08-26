@@ -33,6 +33,7 @@ void buffer_pool_deinit() {
 }
 
 char *buffer_pool_alloc(size_t size) {
+  assert(size <= BUFFER_SIZE);
   for (size_t i = 0; i < pool.capacity; ++i) {
     if (!pool.items[i].in_use && pool.items[i].size >= size) {
       log_message(DEBUG, "[1] buffer pool allocation pool.in_use: %d of %d\n",

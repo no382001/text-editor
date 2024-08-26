@@ -2,3 +2,7 @@
 
 find . -name "*.[ch]" -exec clang-format -i {} \;
 valgrind --leak-check=full ./texteditor
+
+- document index and cursor index are not in sync
+- there are lots of pitfalls with pointer management, probably with the functions introduced in the prev commit
+- there are 0 tests, perhaps its time to start writing them?

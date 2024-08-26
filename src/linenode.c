@@ -67,13 +67,13 @@ void line_node_replace(LineNode *ln, size_t index, const char *text) {
   insert_into_node(&ln->head, index, text);
 }
 
-void line_node_insert(LineNode *ln, size_t index, char c) {
-  insert_into_node(&ln->head, index, (char *)&c);
+void line_node_insert_char(LineNode *ln, size_t index, char c) {
+  modify_node(&ln->head, index, (char*)&c, 1, INSERTION);
 }
 
 void line_node_insert_newline(LineNode *ln, size_t index) {
 
-  // Find the node and the local index within that node where the split should
+  // find the node and the local index within that node where the 'split' should
   // occur
   Node *current_node = ln->head;
   size_t current_pos = 0;
@@ -83,7 +83,7 @@ void line_node_insert_newline(LineNode *ln, size_t index) {
     current_node = current_node->next;
   }
 
-  // If the index is exactly at the end of the line, just create a new line
+  // if the index is exactly at the end of the line, just create a new line
   if (!current_node || index == current_pos + current_node->size) {
     LineNode *new_ln = new_line(ln);
     new_ln->next = ln->next;
@@ -95,33 +95,20 @@ void line_node_insert_newline(LineNode *ln, size_t index) {
     return;
   }
 
-  // Calculate the local index within the current node
+  // calculate the local index within the current node
   size_t local_index = index - current_pos;
 
-  // Split the current node if necessary
-  if (local_index < current_node->size) {
-    split_node(current_node); // This will split the node at SPLIT_SIZE
-  }
-
-  // Now create a new line and transfer the content after the index to it
+  // now create a new line and transfer the content after the index to it
   LineNode *new_ln = new_line(ln);
-  Node *new_node = create_node();
-  chk_ptr(new_node);
 
-  // Copy the content after the local index to the new node
+  // copy the content after the local index to the new node
   size_t split_size = current_node->size - local_index;
-  memcpy(new_node->chunk, current_node->chunk + local_index, split_size);
-  new_node->size = split_size;
-  new_node->chunk[split_size] = '\0'; // Null-terminate the new chunk
+  memcpy(new_ln->head->chunk, current_node->chunk + local_index, split_size);
+  new_ln->head->size = split_size;
 
-  // Adjust the original node
   current_node->size = local_index;
-  current_node->chunk[local_index] = '\0'; // Null-terminate the original chunk
 
-  // Link the new node into the new line
-  new_ln->head = new_node;
-
-  // Insert the new line after the current one
+  // insert the new line after the current one
   new_ln->next = ln->next;
   if (ln->next) {
     ln->next->prev = new_ln;

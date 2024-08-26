@@ -131,7 +131,7 @@ void handle_keys(Document *d) {
   if (key > 0) {
     LineNode *line = document_find_line(d, cursor.line);
     chk_ptr(line);
-    line_node_insert(line, cursor.column+1, key);
+    line_node_insert_char(line, cursor.column+1, key);
     key_right(d);
   }
 
