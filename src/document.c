@@ -63,14 +63,15 @@ void document_build_index(Document *d, size_t gap) {
   }
 
   d->line_index.line_gap = gap;
-  d->line_index.index_size = (d->line_count + gap - 1) / gap;
-  d->line_index.index = malloc(d->line_index.index_size * sizeof(LineNode *));
+
+  size_t max_index_size = ((d->line_count + gap - 1) / gap);
+  d->line_index.index = malloc(max_index_size * sizeof(LineNode *));
 
   LineNode *ln = d->first_line;
   size_t idx = 0;
   size_t line_number = 0;
 
-  while (ln && idx < d->line_index.index_size) {
+  while (ln) {
     if (line_number % gap == 0) {
       d->line_index.index[idx++] = ln;
     }
@@ -78,7 +79,9 @@ void document_build_index(Document *d, size_t gap) {
     line_number++;
   }
 
-  log_message(DEBUG, "index built!\n");
+  d->line_index.index_size = idx;
+
+  log_message(DEBUG, "index built with %zu entries!\n", d->line_index.index_size);
 }
 
 LineNode *document_find_line(Document *d, int i) {

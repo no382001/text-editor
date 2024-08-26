@@ -294,6 +294,94 @@ void test_line_node_delete_and_merge(void) {
     free(ln1);
 }
 
+#include "document.h"
+
+void test_document_init(void) {
+    Document doc;
+    document_init(&doc);
+
+    TEST_ASSERT_NOT_NULL(doc.first_line);
+    TEST_ASSERT_NOT_NULL(doc.last_line);
+    TEST_ASSERT_EQUAL_PTR(doc.first_line, doc.last_line);
+    TEST_ASSERT_EQUAL(1, doc.line_count);
+    TEST_ASSERT_NULL(doc.line_index.index);
+    TEST_ASSERT_EQUAL(0, doc.line_index.index_size);
+    TEST_ASSERT_EQUAL(0, doc.line_index.line_gap);
+
+    document_deinit(&doc);
+}
+
+void test_document_append(void) {
+    Document doc;
+    document_init(&doc);
+
+    document_append(&doc, "Hello, World!");
+    TEST_ASSERT_EQUAL_STRING("Hello, World!", doc.first_line->head->chunk);
+    TEST_ASSERT_EQUAL(1, doc.line_count);
+
+    document_deinit(&doc);
+}
+
+void test_document_newline(void) {
+    Document doc;
+    document_init(&doc);
+
+    document_append(&doc, "Hello, World!");
+    document_newline(&doc);
+    TEST_ASSERT_NOT_NULL(doc.first_line->next);
+    TEST_ASSERT_EQUAL_PTR(doc.first_line->next, doc.last_line);
+    TEST_ASSERT_EQUAL(2, doc.line_count);
+
+    document_deinit(&doc);
+}
+
+void test_document_build_index(void) {
+    Document doc;
+    document_init(&doc);
+
+    for (int i = 0; i < 10; ++i) {
+        char line[32];
+        snprintf(line, sizeof(line), "Line %d", i + 1);
+        document_append(&doc, line);
+        document_newline(&doc);
+    }
+
+    document_build_index(&doc, 2);
+
+    TEST_ASSERT_EQUAL(5, doc.line_index.index_size);
+    LineNode *ln = doc.line_index.index[0];
+    TEST_ASSERT_EQUAL_STRING("Line 1", ln->head->chunk);
+
+    ln = doc.line_index.index[2];
+    TEST_ASSERT_EQUAL_STRING("Line 5", ln->head->chunk);
+
+    document_deinit(&doc);
+}
+
+void test_document_find_line(void) {
+    Document doc;
+    document_init(&doc);
+
+    for (int i = 0; i < 10; ++i) {
+        char line[32];
+        snprintf(line, sizeof(line), "Line %d", i + 1);
+        document_append(&doc, line);
+        document_newline(&doc);
+    }
+
+    document_build_index(&doc, 2);
+
+    LineNode *ln = document_find_line(&doc, 4);
+    TEST_ASSERT_NOT_NULL(ln);
+    TEST_ASSERT_EQUAL_STRING("Line 5", ln->head->chunk);
+
+    ln = document_find_line(&doc, 9);
+    TEST_ASSERT_NOT_NULL(ln);
+    TEST_ASSERT_EQUAL_STRING("Line 10", ln->head->chunk);
+
+    document_deinit(&doc);
+}
+
 
 void setUp(void) { buffer_pool_init(2); }
 
@@ -326,6 +414,13 @@ int main(void) {
   RUN_TEST(test_line_node_insert);
   RUN_TEST(test_line_node_insert_newline);
   RUN_TEST(test_line_node_delete_and_merge);
+
+  printf("---- document\n");
+  RUN_TEST(test_document_init);
+  RUN_TEST(test_document_append);
+  RUN_TEST(test_document_newline);
+  RUN_TEST(test_document_build_index);
+  RUN_TEST(test_document_find_line);
 
   return UNITY_END();
 }
