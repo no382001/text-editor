@@ -58,3 +58,4 @@ _deps
 
 texteditor
 .vscode/*
+build/texteditor_test

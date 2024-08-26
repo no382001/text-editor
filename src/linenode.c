@@ -19,37 +19,48 @@ void line_node_append(LineNode *ln, const char *text) {
 }
 
 void line_node_delete(LineNode *ln, size_t index, size_t length) {
-  chk_ptr(ln->head);
+    chk_ptr(ln->head);
 
-  if (index < ln->head->size) {
-    delete_from_node(&ln->head, index, length);
-  }
-
-  // if im deleting from the first col
-  if (index == 0) {
-    // if there's a previous line, merge this line with the previous one
-    if (ln->prev) {
-      // Find the last node of the previous line
-      Node *prev_node = ln->prev->head;
-      while (prev_node->next) {
-        prev_node = prev_node->next;
-      }
-
-      chk_ptr(ln->head);
-      // merge the current line's head into the previous line's last node
-      insert_into_node(&prev_node, prev_node->size, ln->head->chunk);
-
-      // re-link
-      if (ln->next) {
-        ln->next->prev = ln->prev;
-      }
-      ln->prev->next = ln->next;
-
-      free_node(ln->head);
-      free(ln);
+    if (index < ln->head->size) {
+        delete_from_node(&ln->head, index, length);
     }
-  }
+
+    // if the entire line was deleted, free the line node
+    if (ln->head == NULL || ln->head->size == 0) {
+        // if there is a previous line, adjust the links
+        if (ln->prev) {
+            ln->prev->next = ln->next;
+        }
+        if (ln->next) {
+            ln->next->prev = ln->prev;
+        }
+
+        free(ln);
+        return;
+    }
+
+    // if the deletion started from index 0 and the line is not empty
+    if (index == 0 && ln->head && ln->prev) {
+        // Find the last node of the previous line
+        Node *prev_node = ln->prev->head;
+        while (prev_node->next) {
+            prev_node = prev_node->next;
+        }
+
+        // merge the current line's head into the previous line's last node
+        insert_into_node(&prev_node, prev_node->size, ln->head->chunk);
+
+        // re-link
+        if (ln->next) {
+            ln->next->prev = ln->prev;
+        }
+        ln->prev->next = ln->next;
+
+        free_node(ln->head);
+        free(ln);
+    }
 }
+
 
 void line_node_replace(LineNode *ln, size_t index, const char *text) {
   if (index < ln->head->size) {

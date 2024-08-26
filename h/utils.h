@@ -6,8 +6,8 @@
 #include <unistd.h>
 
 typedef enum {
-  INFO,
   ERROR,
+  INFO,
   WARNING,
   DEBUG,
 } LogLevel;

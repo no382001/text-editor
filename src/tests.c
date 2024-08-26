@@ -280,6 +280,7 @@ void test_line_node_delete_and_merge(void) {
 
     LineNode *ln2 = new_line(ln1);
     ln1->next = ln2;
+    ln2->prev = ln1;
     line_node_append(ln2, "World!");
 
     // delete "World!" from the start of the second line

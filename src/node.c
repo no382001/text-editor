@@ -42,6 +42,7 @@ void split_node(Node *node) {
 void free_node(Node *n) {
   buffer_pool_free(n->chunk);
   free(n);
+  n = NULL;
 }
 
 void merge_nodes(Node *node) {
