@@ -131,7 +131,7 @@ void handle_keys(Document *d) {
   if (key > 0) {
     LineNode *line = document_find_line(d, cursor.line);
     chk_ptr(line);
-    line_node_insert_char(line, cursor.column+1, key);
+    line_node_insert_char(line, cursor.column, key);
     key_right(d);
   }
 
@@ -139,8 +139,24 @@ void handle_keys(Document *d) {
     if (cursor.line >= 0 && cursor.column >= 0) {
       LineNode *line = document_find_line(d, cursor.line);
       chk_ptr(line);
-      line_node_delete(line, cursor.column-1, 1);
-      key_left(d);
+      int to_delete_index = cursor.column - 1;
+      if (to_delete_index == -1){ // janky but works
+        char buff[128];
+        sprintf(buff,"%.*s",line->head->size,line->head->chunk);
+        line_node_append(line->prev,buff);
+        line_node_delete(line, 0, line->head->size); // the whoole thing
+        key_left(d);
+      } else {
+        line_node_delete(line, cursor.column-1, 1);
+        key_left(d);
+      }
     }   
+  }
+
+  if (IsKeyPressed(KEY_ENTER)) {
+      LineNode *line = document_find_line(d, cursor.line);
+      chk_ptr(line);
+      line_node_insert_newline(line, cursor.column);
+      key_right(d);
   }
 }
