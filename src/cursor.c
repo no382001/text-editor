@@ -1,7 +1,7 @@
 
 #include "cursor.h"
-#include "utils.h"
 #include "raylib.h"
+#include "utils.h"
 
 Cursor cursor = {0, 0}; // top left
 
@@ -121,8 +121,26 @@ void handle_keys(Document *d) {
         (cursor.line - visible_lines + 1) * (font_size + line_padding);
   }
 
-  int key = GetCharPressed();
+  int key = GetKeyPressed();
+  const char *buff = GetKeyString(key);
+  if (key > 0){
+    log_message(DEBUG, "keypress: %s, crsor:%d,%d\n", buff,cursor.line,cursor.column);
+  }
+
+  key = GetCharPressed();
   if (key > 0) {
-    // handle character input
+    LineNode *line = document_find_line(d, cursor.line);
+    chk_ptr(line);
+    line_node_insert(line, cursor.column+1, key);
+    key_right(d);
+  }
+
+  if (IsKeyPressed(KEY_BACKSPACE)) {
+    if (cursor.line >= 0 && cursor.column >= 0) {
+      LineNode *line = document_find_line(d, cursor.line);
+      chk_ptr(line);
+      line_node_delete(line, cursor.column-1, 1);
+      key_left(d);
+    }   
   }
 }

@@ -61,3 +61,7 @@ static void print_path() {
   } while (0)
 
 //
+
+#include "raylib.h"
+
+const char *GetKeyString(int key);
