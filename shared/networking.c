@@ -208,6 +208,7 @@ void send_to_client(const char *format, ...) {
   if (!global_network_cfg) {
     return;
   }
+  usleep(10000);  // haha fuck you message queue
 
   char buffer[1024];
 

@@ -1,8 +1,6 @@
 package provide editor 0.1
 
 set BUFFER {}
-set currentLine 0
-set currentCol 0
 set searchpattern ""
 set cursorPosition [list 0 0]
 set previousCursorPosition [list 0 0]
@@ -145,6 +143,12 @@ proc replace_line {lineNumber newContent} {
     set BUFFER [lreplace $BUFFER $lineNumber $lineNumber $newContent]
 
     update_line $lineNumber
+}
+
+proc set_cursor_pos {line col} {
+    global cursorPosition
+    set cursorPosition [lset cursorPosition 0 [expr {$line + 0}]]
+    set cursorPosition [lset cursorPosition 1 [expr {$col + 0}]]
 }
 
 proc update_viewport {} {

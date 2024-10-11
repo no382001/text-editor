@@ -18,6 +18,9 @@ namespace eval commands {
             "ch" {
                 replace_line $line $data
             }
+            "pos" {
+                set_cursor_pos $line $column
+            }
             default {
                 puts "unknown command: $command"
             }

@@ -65,8 +65,8 @@ void viewport(arg_t *args, int size){
     char *b64uf = base64_encode(buf, strlen(buf));
     
     send_to_client("ch %d %d %s", i, 0, b64uf);
-    usleep(10000); // haha fuck you message queue
   }
+  send_to_client("pos %d %d", 0, 0);
 }
 
 // refactor this so it can handle multiple arguments if needed
@@ -87,12 +87,19 @@ void key_pressed(arg_t *args, int size) {
 
   LineNode *ln = document_find_line(g_d, line);
   print_line_node(ln); printf(" -> ");
+
+  if (strcmp(key,"space") == 0){
+    key = " ";
+  }
+
   if (strcmp(key, "BackSpace") == 0) {
     delete_from_node(&ln->head, col, 1);
-    print_line_node(ln); 
+    print_line_node(ln);
+    send_to_client("pos %d %d", line, col - 1);
   } else {
     insert_into_node(&ln->head,col,key);
     print_line_node(ln); 
+    send_to_client("pos %d %d", line, col + 1);
   }
   putc('\n',stdout);
   fflush(stdout);
@@ -102,6 +109,8 @@ void key_pressed(arg_t *args, int size) {
   print_node_to_buffer(ln->head,buf,MSG_BUFFER_SIZE);
   char *b64uf = base64_encode(buf, strlen(buf));
   send_to_client("ch %d %d %s", line, col, b64uf);
+  
+  //send_to_client("pos %d %d", line, col - 1);
 }
 
 command_fn find_function_by_command(const char *command) {

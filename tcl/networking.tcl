@@ -3,10 +3,7 @@ namespace eval networking {
     variable server_address "localhost"
     variable server_port 5000
     variable sock ""
-    array set key_states {}
-
-    set debounce_time 100
-
+    
     # ----------------------------
     # connecting
     # ----------------------------
