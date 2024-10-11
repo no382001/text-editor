@@ -2,17 +2,18 @@
 #include "unity.h"
 #include "utils.h"
 
-#define TEST_ASSERT_EQUAL_STRING_SIZE(expected, actual, size) \
-    do { \
-        char actual_buffer[size + 1]; \
-        snprintf(actual_buffer, size + 1, "%.*s", (int)size, actual); \
-        TEST_ASSERT_EQUAL_STRING(expected,actual_buffer);\
-    } while (0)
+#define TEST_ASSERT_EQUAL_STRING_SIZE(expected, actual, size)                  \
+  do {                                                                         \
+    char actual_buffer[size + 1];                                              \
+    snprintf(actual_buffer, size + 1, "%.*s", (int)size, actual);              \
+    TEST_ASSERT_EQUAL_STRING(expected, actual_buffer);                         \
+  } while (0)
 
 /*  buffer pool */
 
 #include "bufferpool.h"
-#define POOL_SIZE 2
+//#undef POOL_SIZE
+//#define POOL_SIZE 2
 
 extern BufferPool pool;
 
@@ -134,11 +135,11 @@ void test_insert_into_node(void) {
   insert_into_node(&head, 0, "Hello, World!");
 
   TEST_ASSERT_EQUAL(13, head->size);
-  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", head->chunk,head->size);
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", head->chunk, head->size);
 
   insert_into_node(&head, 7, "Cruel ");
   TEST_ASSERT_EQUAL_STRING_SIZE("Hello, Cruel World!", head->chunk, head->size);
-                              // ^^^^^^^
+  // ^^^^^^^
 
   free_node(head);
 }
@@ -148,11 +149,11 @@ void test_delete_from_node(void) {
   insert_into_node(&head, 0, "Hello, Cruel World!");
   delete_from_node(&head, 7, 6);
 
-  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", head->chunk,head->size);
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", head->chunk, head->size);
   TEST_ASSERT_EQUAL(13, head->size);
 
   delete_from_node(&head, 0, 6);
-  TEST_ASSERT_EQUAL_STRING_SIZE(" World!", head->chunk,head->size);
+  TEST_ASSERT_EQUAL_STRING_SIZE(" World!", head->chunk, head->size);
   TEST_ASSERT_EQUAL(7, head->size);
 
   free_node(head);
@@ -160,14 +161,21 @@ void test_delete_from_node(void) {
 
 void test_delete_and_merge(void) {
   Node *head = create_node();
-  insert_into_node(&head, 0, "Hello,lk;asdl;askd;asdl;askdl;akl;kdl;askl;dkasl; ");
-  insert_into_node(&head, 7, "World!opasopdiasopdiopasidpoasidpoasiopdiaspodiopasidpaosidpoasidpoasidpoasidopsaidopasidposiaopdiaspodiasopdiasopdiopaidopis");
+  insert_into_node(&head, 0,
+                   "Hello,lk;asdl;askd;asdl;askdl;akl;kdl;askl;dkasl; ");
+  insert_into_node(
+      &head, 7,
+      "World!"
+      "opasopdiasopdiopasidpoasidpoasiopdiaspodiopasidpaosidpoasidpoasidpoasido"
+      "psaidopasidposiaopdiaspodiasopdiasopdiopaidopis");
 
   delete_from_node(&head, 7, 1); // remove space shouldnt trigger merge
   delete_from_node(&head, 5, 60);
   delete_from_node(&head, 5, 60); // merge trigger, how do i test this?
 
-  TEST_ASSERT_EQUAL_STRING_SIZE("Helloidopisk;asdl;askd;asdl;askdl;akl;kdl;askl;dkasl; ",head->chunk,head->size);
+  TEST_ASSERT_EQUAL_STRING_SIZE(
+      "Helloidopisk;asdl;askd;asdl;askdl;akl;kdl;askl;dkasl; ", head->chunk,
+      head->size);
   TEST_ASSERT_EQUAL(54, head->size);
 
   free_node(head);
@@ -178,10 +186,11 @@ void test_complex_modifications(void) {
   insert_into_node(&head, 0, "Hello World!");
 
   insert_into_node(&head, 5, ", how are you?");
-  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, how are you? World!", head->chunk,head->size);
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, how are you? World!", head->chunk,
+                                head->size);
 
   delete_from_node(&head, 7, 13); // deleting "how are you? "
-  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", head->chunk,head->size);
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", head->chunk, head->size);
 
   free_node(head);
 }
@@ -191,197 +200,201 @@ void test_complex_modifications(void) {
 #include "linenode.h"
 
 void test_new_line(void) {
-    LineNode *ln = new_line(NULL);
-    
-    TEST_ASSERT_NOT_NULL(ln);
-    TEST_ASSERT_NOT_NULL(ln->head);
-    TEST_ASSERT_EQUAL(0, ln->head->size);
-    TEST_ASSERT_NULL(ln->next);
-    TEST_ASSERT_NULL(ln->prev);
+  LineNode *ln = new_line(NULL);
 
-    free_node(ln->head);
-    free(ln);
+  TEST_ASSERT_NOT_NULL(ln);
+  TEST_ASSERT_NOT_NULL(ln->head);
+  TEST_ASSERT_EQUAL(0, ln->head->size);
+  TEST_ASSERT_NULL(ln->next);
+  TEST_ASSERT_NULL(ln->prev);
+
+  free_node(ln->head);
+  free(ln);
 }
 
 void test_line_node_append(void) {
-    LineNode *ln = new_line(NULL);
-    line_node_append(ln, "Hello, World!");
+  LineNode *ln = new_line(NULL);
+  line_node_append(ln, "Hello, World!");
 
-    TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", ln->head->chunk,ln->head->size);
-    TEST_ASSERT_EQUAL(strlen("Hello, World!"), ln->head->size);
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", ln->head->chunk,
+                                ln->head->size);
+  TEST_ASSERT_EQUAL(strlen("Hello, World!"), ln->head->size);
 
-    free_node(ln->head);
-    free(ln);
+  free_node(ln->head);
+  free(ln);
 }
 
 void test_line_node_delete(void) {
-    LineNode *ln = new_line(NULL);
-    line_node_append(ln, "Hello, World!");
-    
-    // delete ", World"
-    line_node_delete(ln, 5, 7);
-    TEST_ASSERT_EQUAL_STRING_SIZE("Hello!", ln->head->chunk,ln->head->size);
-    TEST_ASSERT_EQUAL(strlen("Hello!"), ln->head->size);
+  LineNode *ln = new_line(NULL);
+  line_node_append(ln, "Hello, World!");
 
-    free_node(ln->head);
-    free(ln);
+  // delete ", World"
+  line_node_delete(ln, 5, 7);
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello!", ln->head->chunk, ln->head->size);
+  TEST_ASSERT_EQUAL(strlen("Hello!"), ln->head->size);
+
+  free_node(ln->head);
+  free(ln);
 }
 
 void test_line_node_replace(void) {
-    LineNode *ln = new_line(NULL);
-    line_node_append(ln, "Hello, World ! !");
+  LineNode *ln = new_line(NULL);
+  line_node_append(ln, "Hello, World ! !");
 
-    // replace "World" with "Universe"
-    line_node_replace(ln, 7, "Universe");
-    TEST_ASSERT_EQUAL_STRING_SIZE("Hello, Universe!", ln->head->chunk, ln->head->size);
-    TEST_ASSERT_EQUAL(strlen("Hello, Universe!"), ln->head->size);
+  // replace "World" with "Universe"
+  line_node_replace(ln, 7, "Universe");
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, Universe!", ln->head->chunk,
+                                ln->head->size);
+  TEST_ASSERT_EQUAL(strlen("Hello, Universe!"), ln->head->size);
 
-    free_node(ln->head);
-    free(ln);
+  free_node(ln->head);
+  free(ln);
 }
 
 void test_line_node_insert(void) {
-    LineNode *ln = new_line(NULL);
-    line_node_append(ln, "Helo, World!");
+  LineNode *ln = new_line(NULL);
+  line_node_append(ln, "Helo, World!");
 
-    // insert 'l' at position 2
-    line_node_insert_char(ln, 2, 'l');
-    TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", ln->head->chunk, ln->head->size);
-    TEST_ASSERT_EQUAL(strlen("Hello, World!"), ln->head->size);
+  // insert 'l' at position 2
+  line_node_insert_char(ln, 2, 'l');
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", ln->head->chunk,
+                                ln->head->size);
+  TEST_ASSERT_EQUAL(strlen("Hello, World!"), ln->head->size);
 
-    free_node(ln->head);
-    free(ln);
+  free_node(ln->head);
+  free(ln);
 }
 
 void test_line_node_insert_newline(void) {
-    LineNode *ln = new_line(NULL);
-    line_node_append(ln, "Hello, World!");
-                      //  ^^^^^^^
+  LineNode *ln = new_line(NULL);
+  line_node_append(ln, "Hello, World!");
+  //  ^^^^^^^
 
-    // insert a newline at position 7 ("Hello, " should be on the first line, "World!" on the second)
-    line_node_insert_newline(ln, 7);
-    
-    TEST_ASSERT_NOT_NULL(ln->next);
-    TEST_ASSERT_EQUAL_STRING_SIZE("Hello, ", ln->head->chunk, ln->head->size);
-    TEST_ASSERT_EQUAL(strlen("Hello, "), ln->head->size);
+  // insert a newline at position 7 ("Hello, " should be on the first line,
+  // "World!" on the second)
+  line_node_insert_newline(ln, 7);
 
-    TEST_ASSERT_EQUAL_STRING_SIZE("World!", ln->next->head->chunk, ln->next->head->size);
-    TEST_ASSERT_EQUAL(strlen("World!"), ln->next->head->size);
+  TEST_ASSERT_NOT_NULL(ln->next);
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, ", ln->head->chunk, ln->head->size);
+  TEST_ASSERT_EQUAL(strlen("Hello, "), ln->head->size);
 
-    free_node(ln->next->head);
-    free(ln->next);
-    free_node(ln->head);
-    free(ln);
+  TEST_ASSERT_EQUAL_STRING_SIZE("World!", ln->next->head->chunk,
+                                ln->next->head->size);
+  TEST_ASSERT_EQUAL(strlen("World!"), ln->next->head->size);
+
+  free_node(ln->next->head);
+  free(ln->next);
+  free_node(ln->head);
+  free(ln);
 }
 
 void test_line_node_delete_and_merge(void) {
-    LineNode *ln1 = new_line(NULL);
-    line_node_append(ln1, "Hello, ");
+  LineNode *ln1 = new_line(NULL);
+  line_node_append(ln1, "Hello, ");
 
-    LineNode *ln2 = new_line(ln1);
-    ln1->next = ln2;
-    ln2->prev = ln1;
-    line_node_append(ln2, "World!");
+  LineNode *ln2 = new_line(ln1);
+  ln1->next = ln2;
+  ln2->prev = ln1;
+  line_node_append(ln2, "World!");
 
-    // delete "World!" from the start of the second line
-    line_node_delete(ln2, 0, 6);
+  // delete "World!" from the start of the second line
+  line_node_delete(ln2, 0, 6);
 
-    TEST_ASSERT_NULL(ln1->next);
-    TEST_ASSERT_EQUAL_STRING_SIZE("Hello, ", ln1->head->chunk, ln1->head->size);
-    TEST_ASSERT_EQUAL(strlen("Hello, "), ln1->head->size);
+  TEST_ASSERT_NULL(ln1->next);
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, ", ln1->head->chunk, ln1->head->size);
+  TEST_ASSERT_EQUAL(strlen("Hello, "), ln1->head->size);
 
-    free_node(ln1->head);
-    free(ln1);
+  free_node(ln1->head);
+  free(ln1);
 }
 
 #include "document.h"
 
 void test_document_init(void) {
-    Document doc;
-    document_init(&doc);
+  Document doc;
+  document_init(&doc);
 
-    TEST_ASSERT_NOT_NULL(doc.first_line);
-    TEST_ASSERT_NOT_NULL(doc.last_line);
-    TEST_ASSERT_EQUAL_PTR(doc.first_line, doc.last_line);
-    TEST_ASSERT_EQUAL(1, doc.line_count);
-    TEST_ASSERT_NULL(doc.line_index.index);
-    TEST_ASSERT_EQUAL(0, doc.line_index.index_size);
-    TEST_ASSERT_EQUAL(0, doc.line_index.line_gap);
+  TEST_ASSERT_NOT_NULL(doc.first_line);
+  TEST_ASSERT_NOT_NULL(doc.last_line);
+  TEST_ASSERT_EQUAL_PTR(doc.first_line, doc.last_line);
+  TEST_ASSERT_EQUAL(1, doc.line_count);
+  TEST_ASSERT_NULL(doc.line_index.index);
+  TEST_ASSERT_EQUAL(0, doc.line_index.index_size);
+  TEST_ASSERT_EQUAL(0, doc.line_index.line_gap);
 
-    document_deinit(&doc);
+  document_deinit(&doc);
 }
 
 void test_document_append(void) {
-    Document doc;
-    document_init(&doc);
+  Document doc;
+  document_init(&doc);
 
-    document_append(&doc, "Hello, World!");
-    TEST_ASSERT_EQUAL_STRING("Hello, World!", doc.first_line->head->chunk);
-    TEST_ASSERT_EQUAL(1, doc.line_count);
+  document_append(&doc, "Hello, World!");
+  TEST_ASSERT_EQUAL_STRING("Hello, World!", doc.first_line->head->chunk);
+  TEST_ASSERT_EQUAL(1, doc.line_count);
 
-    document_deinit(&doc);
+  document_deinit(&doc);
 }
 
 void test_document_newline(void) {
-    Document doc;
-    document_init(&doc);
+  Document doc;
+  document_init(&doc);
 
-    document_append(&doc, "Hello, World!");
-    document_newline(&doc);
-    TEST_ASSERT_NOT_NULL(doc.first_line->next);
-    TEST_ASSERT_EQUAL_PTR(doc.first_line->next, doc.last_line);
-    TEST_ASSERT_EQUAL(2, doc.line_count);
+  document_append(&doc, "Hello, World!");
+  document_newline(&doc);
+  TEST_ASSERT_NOT_NULL(doc.first_line->next);
+  TEST_ASSERT_EQUAL_PTR(doc.first_line->next, doc.last_line);
+  TEST_ASSERT_EQUAL(2, doc.line_count);
 
-    document_deinit(&doc);
+  document_deinit(&doc);
 }
 
 void test_document_build_index(void) {
-    Document doc;
-    document_init(&doc);
+  Document doc;
+  document_init(&doc);
 
-    for (int i = 0; i < 10; ++i) {
-        char line[32];
-        snprintf(line, sizeof(line), "Line %d", i + 1);
-        document_append(&doc, line);
-        document_newline(&doc);
-    }
+  for (int i = 0; i < 10; ++i) {
+    char line[32];
+    snprintf(line, sizeof(line), "Line %d", i + 1);
+    document_append(&doc, line);
+    document_newline(&doc);
+  }
 
-    document_build_index(&doc, 2);
+  document_build_index(&doc, 2);
 
-    TEST_ASSERT_EQUAL(5, doc.line_index.index_size);
-    LineNode *ln = doc.line_index.index[0];
-    TEST_ASSERT_EQUAL_STRING("Line 1", ln->head->chunk);
+  TEST_ASSERT_EQUAL(5, doc.line_index.index_size);
+  LineNode *ln = doc.line_index.index[0];
+  TEST_ASSERT_EQUAL_STRING("Line 1", ln->head->chunk);
 
-    ln = doc.line_index.index[2];
-    TEST_ASSERT_EQUAL_STRING("Line 5", ln->head->chunk);
+  ln = doc.line_index.index[2];
+  TEST_ASSERT_EQUAL_STRING("Line 5", ln->head->chunk);
 
-    document_deinit(&doc);
+  document_deinit(&doc);
 }
 
 void test_document_find_line(void) {
-    Document doc;
-    document_init(&doc);
+  Document doc;
+  document_init(&doc);
 
-    for (int i = 0; i < 10; ++i) {
-        char line[32];
-        snprintf(line, sizeof(line), "Line %d", i + 1);
-        document_append(&doc, line);
-        document_newline(&doc);
-    }
+  for (int i = 0; i < 10; ++i) {
+    char line[32];
+    snprintf(line, sizeof(line), "Line %d", i + 1);
+    document_append(&doc, line);
+    document_newline(&doc);
+  }
 
-    document_build_index(&doc, 2);
+  document_build_index(&doc, 2);
 
-    LineNode *ln = document_find_line(&doc, 4);
-    TEST_ASSERT_NOT_NULL(ln);
-    TEST_ASSERT_EQUAL_STRING("Line 5", ln->head->chunk);
+  LineNode *ln = document_find_line(&doc, 4);
+  TEST_ASSERT_NOT_NULL(ln);
+  TEST_ASSERT_EQUAL_STRING("Line 5", ln->head->chunk);
 
-    ln = document_find_line(&doc, 9);
-    TEST_ASSERT_NOT_NULL(ln);
-    TEST_ASSERT_EQUAL_STRING("Line 10", ln->head->chunk);
+  ln = document_find_line(&doc, 9);
+  TEST_ASSERT_NOT_NULL(ln);
+  TEST_ASSERT_EQUAL_STRING("Line 10", ln->head->chunk);
 
-    document_deinit(&doc);
+  document_deinit(&doc);
 }
-
 
 void setUp(void) { buffer_pool_init(2); }
 

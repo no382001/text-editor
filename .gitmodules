@@ -1,6 +1,0 @@
-[submodule "freetype-gl"]
-	path = freetype-gl
-	url = https://github.com/rougier/freetype-gl
-[submodule "tinyscm"]
-	path = tinyscm
-	url = https://github.com/no382001/tinyscm

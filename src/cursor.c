@@ -123,8 +123,9 @@ void handle_keys(Document *d) {
 
   int key = GetKeyPressed();
   const char *buff = GetKeyString(key);
-  if (key > 0){
-    log_message(DEBUG, "keypress: %s, crsor:%d,%d\n", buff,cursor.line,cursor.column);
+  if (key > 0) {
+    log_message(DEBUG, "keypress: %s, crsor:%d,%d\n", buff, cursor.line,
+                cursor.column);
   }
 
   key = GetCharPressed();
@@ -140,23 +141,23 @@ void handle_keys(Document *d) {
       LineNode *line = document_find_line(d, cursor.line);
       chk_ptr(line);
       int to_delete_index = cursor.column - 1;
-      if (to_delete_index == -1){ // janky but works
+      if (to_delete_index == -1) { // janky but works
         char buff[128];
-        sprintf(buff,"%.*s",line->head->size,line->head->chunk);
-        line_node_append(line->prev,buff);
+        sprintf(buff, "%.*s", line->head->size, line->head->chunk);
+        line_node_append(line->prev, buff);
         line_node_delete(line, 0, line->head->size); // the whoole thing
         key_left(d);
       } else {
-        line_node_delete(line, cursor.column-1, 1);
+        line_node_delete(line, cursor.column - 1, 1);
         key_left(d);
       }
-    }   
+    }
   }
 
   if (IsKeyPressed(KEY_ENTER)) {
-      LineNode *line = document_find_line(d, cursor.line);
-      chk_ptr(line);
-      line_node_insert_newline(line, cursor.column);
-      key_right(d);
+    LineNode *line = document_find_line(d, cursor.line);
+    chk_ptr(line);
+    line_node_insert_newline(line, cursor.column);
+    key_right(d);
   }
 }
