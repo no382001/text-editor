@@ -34,12 +34,24 @@ LogLevel get_current_log_level();
     }                                                                          \
   } while (0)
 
-// SOURCE_PATH_SIZE defined in cmake
 #define __RELATIVE_FILE__ (__FILE__ + SOURCE_PATH_SIZE)
 
+#define log_and_execute(level, message, func)                                  \
+  do {                                                                         \
+    log_message_impl(level, message);                                          \
+    if (level <= get_current_log_level()) {                                    \
+      func;                                                                    \
+    }                                                                          \
+  } while (0)
+
+#define LOGGING
+
+#ifdef LOGGING
 #define log_message(level, message, ...)                                       \
   log_message_impl(level, __RELATIVE_FILE__, __LINE__, message, ##__VA_ARGS__)
-
+#else
+#define log_message(level, message, ...)
+#endif
 //
 
 static void print_path() {

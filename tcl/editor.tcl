@@ -117,6 +117,11 @@ set BUFFER {
     "This is line 3."
     "This is line 4."
     "This is line 5."
+    "This is line 6."
+    "This is line 7."
+    "This is line 8."
+    "This is line 9."
+    "This is line 10."
 }
 
 update_display
@@ -127,5 +132,21 @@ proc handle_key_press {k} {
     global cursorPosition
     set col [lindex $cursorPosition 0]
     set lin [lindex $cursorPosition 1]
-    networking::send "ins $col $lin $k"
+    networking::send "key $col $lin $k"
+}
+
+proc replace_line {lineNumber newContent} {
+    global BUFFER
+    if {$lineNumber < 0 || $lineNumber >= [llength $BUFFER]} {
+        puts "line number $lineNumber is out of range"
+        return
+    }
+
+    set BUFFER [lreplace $BUFFER $lineNumber $lineNumber $newContent]
+
+    update_line $lineNumber
+}
+
+proc update_viewport {} {
+    networking::send "viewport 0 10"
 }

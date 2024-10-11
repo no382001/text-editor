@@ -62,6 +62,13 @@ static void init_networking(network_cfg_t *n) {
     exit(1);
   }
 
+  if (setsockopt(n->server_fd, SOL_SOCKET, SO_REUSEPORT, &n->opt,
+                 sizeof(n->opt)) < 0) {
+    log_message(ERROR, "setsockopt(SO_REUSEPORT) failed");
+    close(n->server_fd);
+    exit(1);
+  }
+
   n->server_addr.sin_family = AF_INET;
   n->server_addr.sin_addr.s_addr = INADDR_ANY;
   n->server_addr.sin_port = htons(PORT);
@@ -106,7 +113,7 @@ static void accept_data(network_cfg_t *n) {
   // set timeout to 1 second
   struct timeval timeout;
   timeout.tv_sec = 0;
-  timeout.tv_usec = 10000; // 10 milliseconds
+  timeout.tv_usec = 50000; // 10 milliseconds
 
   // wait for an activity on one of the sockets
   int activity = select(n->max_sd + 1, &n->readfds, NULL, NULL, &timeout);
@@ -144,21 +151,32 @@ static void handle_data(network_cfg_t *n) {
       }
       log_message(DEBUG, "message from tcl: ->%s<-", n->buffer);
 
-      char head[50], tail[50] = {0};
-      if (sscanf(n->buffer, "%s %s", head, tail) != 2) {
+      char head[50] = {0};
+      if (sscanf(n->buffer, "%s", head) != 1) {
         log_message(ERROR, "invalid command format: ->%s<-", n->buffer);
         // continue;
       }
 
       command_fn f = find_function_by_command(head);
+      log_message(DEBUG, "func: ->%s<-", head);
+      arg_t args[MAX_ARGS] = {0};
       if (f != NULL) {
-        if (!strcmp(tail, "semicolon")) {
-          f(";");
-        } else if (!strcmp(tail, "apostrophe")) {
-          f("'");
-        } else {
-          f(tail);
+        int i = 0;
+        char *ptr = n->buffer;
+        sscanf(ptr, "%s", head); // skip command
+        ptr += strlen(head);
+        while (*ptr == ' ')
+          ptr++;
+        while (i < MAX_ARGS && sscanf(ptr, "%s", args[i].data) == 1) {
+          ptr += strlen(args[i].data);
+          log_message(DEBUG, "arg: ->%s<-", args[i].data);
+          while (*ptr == ' ')
+            ptr++;
+          i++;
         }
+        log_message(DEBUG, "sizeof command: ->%d<-", i);
+
+        f(args, i);
       } else {
         log_message(ERROR, "invalid command: ->%s<-", head);
       }
@@ -174,8 +192,8 @@ static void handle_data(network_cfg_t *n) {
 
 static void send_data(network_cfg_t *n, const char *data) {
   if (n->client_fd > 0) {
-    ssize_t bytes_sent = send(n->client_fd, data, sizeof(data), 0);
-
+    ssize_t bytes_sent = send(n->client_fd, data, strlen(data), 0);
+    
     if (bytes_sent < 0) {
       log_message(ERROR, "error sending");
       close(n->client_fd);
@@ -184,6 +202,23 @@ static void send_data(network_cfg_t *n, const char *data) {
       log_message(DEBUG, "sent %ld bytes", bytes_sent);
     }
   }
+}
+
+void send_to_client(const char *format, ...) {
+  if (!global_network_cfg) {
+    return;
+  }
+
+  char buffer[1024];
+
+  va_list args;
+  va_start(args, format);
+
+  vsnprintf(buffer, sizeof(buffer), format, args);
+
+  va_end(args);
+
+  send_data(global_network_cfg, buffer);
 }
 
 void networking_thread(void) {

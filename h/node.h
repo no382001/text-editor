@@ -23,4 +23,5 @@ void insert_into_node(Node **head, size_t index, const char *str);
 void delete_from_node(Node **head, size_t index, size_t length);
 void delete_node(Node **head, size_t index, size_t length);
 void print_node(Node *head);
+void print_node_to_buffer(Node *head, char *buffer, int buffer_size);
 void free_node(Node *n);

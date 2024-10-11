@@ -25,3 +25,4 @@ typedef struct network_cfg {
 } network_cfg_t;
 
 void networking_thread();
+void send_to_client(const char *format, ...);

@@ -51,6 +51,7 @@ namespace eval networking {
         variable sock
         global log
         if {$sock ne ""} {
+            puts $string
             puts -nonewline $sock $string
             flush $sock
         } else {
@@ -72,5 +73,6 @@ namespace eval networking {
         }
 
         set data [read $sock]
+        commands::eval_command $data
     }
 }

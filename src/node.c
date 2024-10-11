@@ -229,3 +229,21 @@ void print_node(Node *head) {
     node = node->next;
   }
 }
+
+void print_node_to_buffer(Node *head, char *buffer, int buffer_size) {
+  Node *node = head;
+  int buffer_index = 0;
+
+  while (node) {
+    for (int i = 0; i < node->size; i++) {
+      if (buffer_index < buffer_size - 1) {
+        buffer[buffer_index++] = node->chunk[i];
+      } else {
+        buffer[buffer_index] = '\0';
+        return;
+      }
+    }
+    node = node->next;
+  }
+  buffer[buffer_index] = '\0';
+}
