@@ -26,15 +26,10 @@ void log_message_impl2(const char *level_str, const char *format, ...);
 void set_log_level(LogLevel level);
 LogLevel get_current_log_level();
 
-#define log_and_execute(level, message, func)                                  \
-  do {                                                                         \
-    log_message_impl(level, message);                                          \
-    if (level <= get_current_log_level()) {                                    \
-      func;                                                                    \
-    }                                                                          \
-  } while (0)
+// wtf does cmake c11 use? this works different there
+// #define __RELATIVE_FILE__ (__FILE__ + SOURCE_PATH_SIZE)
 
-#define __RELATIVE_FILE__ (__FILE__ + SOURCE_PATH_SIZE)
+#define __RELATIVE_FILE__ (__FILE__)
 
 #define log_and_execute(level, message, func)                                  \
   do {                                                                         \
@@ -67,7 +62,7 @@ static void print_path() {
 #define chk_ptr(p)                                                             \
   do {                                                                         \
     if (!p) {                                                                  \
-      log_message(ERROR, "chk_ptr failed\n");                                  \
+      log_message(ERROR, "chk_ptr failed");                                    \
       exit(1);                                                                 \
     }                                                                          \
   } while (0)

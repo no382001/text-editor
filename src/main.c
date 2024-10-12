@@ -7,10 +7,10 @@
 #include "utils.h"
 
 #include <math.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
 
 Document *g_d = 0;
 

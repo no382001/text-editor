@@ -81,8 +81,7 @@ void document_build_index(Document *d, size_t gap) {
 
   d->line_index.index_size = idx;
 
-  log_message(DEBUG, "index built with %zu entries!\n",
-              d->line_index.index_size);
+  log_message(DEBUG, "index built with %zu entries!", d->line_index.index_size);
 }
 
 LineNode *document_find_line(Document *d, int i) {

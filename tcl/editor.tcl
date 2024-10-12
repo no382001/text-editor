@@ -145,6 +145,18 @@ proc replace_line {lineNumber newContent} {
     update_line $lineNumber
 }
 
+proc empty_line {lineNumber} {
+    global BUFFER
+    if {$lineNumber < 0 || $lineNumber >= [llength $BUFFER]} {
+        puts "line number $lineNumber is out of range"
+        return
+    }
+
+    set BUFFER [lreplace $BUFFER $lineNumber $lineNumber ""]
+
+    update_line $lineNumber
+}
+
 proc set_cursor_pos {line col} {
     global cursorPosition
     set cursorPosition [lset cursorPosition 0 [expr {$line + 0}]]

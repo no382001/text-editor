@@ -77,7 +77,10 @@ static void init_networking(network_cfg_t *n) {
   if (bind(n->server_fd, (struct sockaddr *)&n->server_addr,
            sizeof(n->server_addr)) < 0) {
     close(n->server_fd);
-    log_message(ERROR, "bind failed");
+    log_message(ERROR,
+                "bind failed on %d,"
+                "probably in TIME_WAIT see with 'netstat -an | grep :%d'",
+                PORT);
     exit(1);
   }
 
@@ -158,7 +161,7 @@ static void handle_data(network_cfg_t *n) {
       }
 
       command_fn f = find_function_by_command(head);
-      log_message(DEBUG, "func: ->%s<-", head);
+      // log_message(DEBUG, "func: ->%s<-", head);
       arg_t args[MAX_ARGS] = {0};
       if (f != NULL) {
         int i = 0;
@@ -169,12 +172,12 @@ static void handle_data(network_cfg_t *n) {
           ptr++;
         while (i < MAX_ARGS && sscanf(ptr, "%s", args[i].data) == 1) {
           ptr += strlen(args[i].data);
-          log_message(DEBUG, "arg: ->%s<-", args[i].data);
+          // log_message(DEBUG, "arg: ->%s<-", args[i].data);
           while (*ptr == ' ')
             ptr++;
           i++;
         }
-        log_message(DEBUG, "sizeof command: ->%d<-", i);
+        // log_message(DEBUG, "sizeof command: ->%d<-", i);
 
         f(args, i);
       } else {
@@ -193,7 +196,7 @@ static void handle_data(network_cfg_t *n) {
 static void send_data(network_cfg_t *n, const char *data) {
   if (n->client_fd > 0) {
     ssize_t bytes_sent = send(n->client_fd, data, strlen(data), 0);
-    
+
     if (bytes_sent < 0) {
       log_message(ERROR, "error sending");
       close(n->client_fd);
@@ -208,7 +211,7 @@ void send_to_client(const char *format, ...) {
   if (!global_network_cfg) {
     return;
   }
-  usleep(10000);  // haha fuck you message queue
+  usleep(10000); // haha fuck you message queue
 
   char buffer[1024];
 

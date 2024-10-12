@@ -21,7 +21,7 @@ Node *create_node() {
 }
 
 void split_node(Node *node) {
-  log_message(DEBUG, "node split!\n");
+  log_message(DEBUG, "node split!");
   Node *new_node = create_node();
   chk_ptr(new_node);
   new_node->size = SPLIT_SIZE;
@@ -47,7 +47,7 @@ void free_node(Node *n) {
 
 void merge_nodes(Node *node) {
   if (node->next && node->size + node->next->size <= CHUNK_SIZE) {
-    log_message(DEBUG, "node merge!\n");
+    log_message(DEBUG, "node merge!");
     Node *next_node = node->next;
     memcpy(node->chunk + node->size, next_node->chunk, next_node->size);
     // null term?
