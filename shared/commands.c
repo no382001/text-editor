@@ -83,6 +83,7 @@ cleanup:
 
 extern Document *g_d;
 
+#define EDITOR_LINES "14"
 // - update viewport
 //  - viewport <start_line> <end_line>
 void viewport(arg_t *args, int size) {
@@ -97,10 +98,10 @@ void viewport(arg_t *args, int size) {
     char buf[MSG_BUFFER_SIZE] = {0};
     print_node_to_buffer(ln->head, buf, MSG_BUFFER_SIZE);
     if (strlen(buf) == 0) {
-      send_to_client("el %d %d", i, 0);
+      send_to_client("el %d", i);
     } else {
       char *b64uf = base64_encode(buf, strlen(buf));
-      send_to_client("ch %d %d %s", i, 0, b64uf);
+      send_to_client("ch %d %s", i, b64uf);
     }
   }
   // send_to_client("pos %d %d", 0, 0);
@@ -133,7 +134,7 @@ void key_pressed(arg_t *args, int size) {
   printf(" -> ");
 
   if (!strcmp(key, "F5")) {
-    viewport((arg_t[]){{"0"}, {"14"}}, 2);
+    viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
 
   } else if (!strcmp(key, "BackSpace")) {
     delete_from_node(&ln->head, col, 1);
@@ -142,7 +143,7 @@ void key_pressed(arg_t *args, int size) {
 
   } else if (!strcmp(key, "Return")) {
     line_node_insert_newline(ln, col);
-    viewport((arg_t[]){{"0"}, {"14"}}, 2);
+    viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
     send_to_client("pos %d %d", line + 1, 0);
 
   } else {
@@ -159,10 +160,10 @@ void key_pressed(arg_t *args, int size) {
   // so the command is redundant
 
   if (strlen(buf) == 0) {
-    send_to_client("el %d %d", line, col);
+    send_to_client("el %d", line);
   } else {
     char *b64uf = base64_encode(buf, strlen(buf));
-    send_to_client("ch %d %d %s", line, col, b64uf);
+    send_to_client("ch %d %s", line, b64uf);
   }
 }
 
