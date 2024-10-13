@@ -2,12 +2,11 @@
 - history
   - undo/redo
 
-- sometimes it just loses the whole document on insert/delete
-- cursor movement is not really consistent, decide
+- cursor movement is not really consistent, decide how the c -> tcl commands change cursor pos
+  - introduce move_<up/down/left/right> command
+
+- i might need to lose the indexing all-together
 
   el <line> <col> // empty line
   viewport <n1> <n2> -> n1..n2 -> ch <line> <col> <b64line> 
   key <line> <col> <button> -> ch <line> <col> <b64line>
-
-
-how do the c -> tcl commands change cursor pos?

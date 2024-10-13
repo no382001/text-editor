@@ -127,3 +127,18 @@ void line_node_insert_newline(LineNode *ln, size_t index) {
   ln->next = new_ln;
   new_ln->prev = ln;
 }
+
+int line_node_size(LineNode *ln) {
+  if (!ln) {
+    return 0;
+  }
+
+  int size = 0;
+  Node *current = ln->head;
+  while (current != NULL) {
+    size += current->size;
+    current = current->next;
+  }
+
+  return size;
+}

@@ -15,6 +15,7 @@
 Document *g_d = 0;
 
 int main() {
+  set_log_level(DEBUG);
   /* ---- */
   buffer_pool_init(POOL_SIZE);
   Document d;
@@ -22,7 +23,7 @@ int main() {
   g_d = &d;
   // print_path();
   document_load_file(&d, "src/document.c");
-  document_build_index(&d, 5);
+  document_build_index(&d, DOCUMENT_INDEX_GAP);
 
   networking_thread();
 

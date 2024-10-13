@@ -180,6 +180,7 @@ void test_delete_from_node_wrong_index(void) {
   TEST_ASSERT_EQUAL(true, head != 0);
 
   insert_into_node(&head, 30, "Hello, World!"); // to unbound
+  TEST_ASSERT_EQUAL(13, head->size);
 }
 
 void test_delete_and_merge(void) {
@@ -363,6 +364,7 @@ void test_document_append(void) {
 void test_document_newline(void) {
   Document doc;
   document_init(&doc);
+  document_build_index(&doc, 2);
 
   document_append(&doc, "Hello, World!");
   document_newline(&doc);
@@ -370,6 +372,16 @@ void test_document_newline(void) {
   TEST_ASSERT_EQUAL_PTR(doc.first_line->next, doc.last_line);
   TEST_ASSERT_EQUAL(2, doc.line_count);
 
+  document_append(&doc, "Hello, World2!");
+  document_newline(&doc);
+  document_append(&doc, "Hello, World3!");
+  set_log_level(DEBUG);
+  document_delete_char(&doc, 1, 0); // delete the first line
+  TEST_ASSERT_EQUAL(2, doc.line_count);
+
+  document_print_structure(&doc);
+
+  set_log_level(INFO);
   document_deinit(&doc);
 }
 

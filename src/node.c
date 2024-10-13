@@ -126,6 +126,7 @@ void modify_node(Node **head, size_t index, const char *str, size_t len,
     } else if (mod_type == DELETION) {
       if (node->size == index) {
         // yeah dont try to delete from the last character
+        // you will end up in an infinite loop bc of delete_length
         return;
       }
 

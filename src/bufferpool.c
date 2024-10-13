@@ -27,7 +27,9 @@ void buffer_pool_init(size_t initial_capacity) {
 
 void buffer_pool_deinit() {
   for (size_t i = 0; i < pool.capacity; ++i) {
-    free(pool.items[i].buffer);
+    if (!pool.items[i].buffer) {
+      free(pool.items[i].buffer);
+    }
   }
   free(pool.items);
 }

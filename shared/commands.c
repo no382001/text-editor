@@ -130,30 +130,32 @@ void key_pressed(arg_t *args, int size) {
   }
 
   LineNode *ln = document_find_line(g_d, line);
-  print_line_node(ln);
-  printf(" -> ");
 
   if (!strcmp(key, "F5")) {
     viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
 
   } else if (!strcmp(key, "BackSpace")) {
-    delete_from_node(&ln->head, col, 1);
-    print_line_node(ln);
-    send_to_client("pos %d %d", line, col > 0 ? col - 1 : 0);
+    document_delete_char(g_d, line, col);
+    document_build_index(g_d,DOCUMENT_INDEX_GAP);
+    viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
+    //send_to_client("pos %d %d", line, col > 0 ? col - 1 : 0);
+    return;
+    // maybe its the indexing?
 
   } else if (!strcmp(key, "Return")) {
     line_node_insert_newline(ln, col);
+    document_build_index(g_d,DOCUMENT_INDEX_GAP);
     viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
     send_to_client("pos %d %d", line + 1, 0);
+    return;
 
   } else {
     insert_into_node(&ln->head, col, key);
-    print_line_node(ln);
     send_to_client("pos %d %d", line, col + 1);
   }
-  printf("\n\n");
 
   char buf[MSG_BUFFER_SIZE] = {0};
+  chk_ptr(ln->head);
   print_node_to_buffer(ln->head, buf, MSG_BUFFER_SIZE);
 
   // there might not have been any change in edge cases

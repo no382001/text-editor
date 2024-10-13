@@ -85,6 +85,10 @@ void document_build_index(Document *d, size_t gap) {
 }
 
 LineNode *document_find_line(Document *d, int i) {
+  if (!d->line_index.index) {
+    log_message(ERROR, "doc index was not built, cant search for line");
+    return NULL;
+  }
   // i--; // 0 indexing is confusing in this case
 
   if (i < 0 || i > d->line_count) {
@@ -164,4 +168,33 @@ void document_load_file(Document *d, char *filename) {
 
   free(line);
   fclose(file);
+}
+
+void document_delete_line(Document *doc, int line) {
+  LineNode *ln = document_find_line(doc, line);
+  if (!ln) {
+    return;
+  }
+
+  line_node_delete(ln, 0, line_node_size(ln));
+
+  doc->line_count--;
+}
+
+void document_delete_char(Document *doc, int line, int col) {
+  if (col == 0 && line > 0) {
+    LineNode *current_line = document_find_line(doc, line);
+    LineNode *previous_line = document_find_line(doc, line - 1);
+    log_message(DEBUG,"[1] doc_del_char lines curr:%p, prev:%p",current_line,previous_line);
+
+    Node *head = current_line->head;
+    while (head) {
+      line_node_append(previous_line, head->chunk);
+      head = head->next;
+    }
+
+    document_delete_line(doc, line);
+  } else {
+    line_node_delete(document_find_line(doc, line), col, 1);
+  }
 }

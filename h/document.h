@@ -2,6 +2,8 @@
 #include "linenode.h"
 #include <stdio.h>
 
+#define DOCUMENT_INDEX_GAP 5
+
 typedef struct {
   LineNode **index;
   size_t index_size;
@@ -24,3 +26,5 @@ void document_print_structure(Document *d);
 void document_build_index(Document *d, size_t gap);
 LineNode *document_find_line(Document *d, int i);
 void document_load_file(Document *d, char *filename);
+void document_delete_line(Document *doc, int line);
+void document_delete_char(Document *doc, int line, int col);
