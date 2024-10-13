@@ -63,6 +63,8 @@ void merge_nodes(Node *node) {
   }
 }
 
+// maybe i should have some indication as to what happened, so i can handle
+// cursor movemeent better?
 void modify_node(Node **head, size_t index, const char *str, size_t len,
                  ModificationType mod_type) {
   size_t str_index = 0;
@@ -122,6 +124,11 @@ void modify_node(Node **head, size_t index, const char *str, size_t len,
         split_node(node);
       }
     } else if (mod_type == DELETION) {
+      if (node->size == index) {
+        // yeah dont try to delete from the last character
+        return;
+      }
+
       // calculate how much we can delete in this node
       size_t delete_length = len;
       if (local_index + delete_length > node->size) {

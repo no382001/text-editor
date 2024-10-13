@@ -2,9 +2,12 @@
 - history
   - undo/redo
 
-- sometimes it just loses the whole document on insert
-- tcl does weird things to the characters, need to handle that like (# -> numbersign)
+- sometimes it just loses the whole document on insert/delete
+- cursor movement is not really consistent, decide
 
   el <line> <col> // empty line
   viewport <n1> <n2> -> n1..n2 -> ch <line> <col> <b64line> 
   key <line> <col> <button> -> ch <line> <col> <b64line>
+
+
+how do the c -> tcl commands change cursor pos?

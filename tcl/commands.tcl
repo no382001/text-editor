@@ -3,6 +3,7 @@ package require base64
 namespace eval commands {
      proc eval_command {string} {
         global log
+        global cursorPosition
 
         set parts [split $string " "]
         set command [lindex $parts 0]
@@ -22,9 +23,14 @@ namespace eval commands {
             "el" {
                 empty_line $line
             }
+            "term" {
+                exit 0
+            }
             default {
                 puts "unknown command: $command"
             }
         }
+
+        update_line [lindex $cursorPosition 0]
     }
 }

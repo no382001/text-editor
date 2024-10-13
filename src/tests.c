@@ -159,6 +159,29 @@ void test_delete_from_node(void) {
   free_node(head);
 }
 
+void test_delete_from_node_wrong_index(void) {
+  Node *head = create_node();
+  insert_into_node(&head, 0, "Hello, Cruel World!");
+  delete_from_node(&head, 7, 6);
+
+  TEST_ASSERT_EQUAL_STRING_SIZE("Hello, World!", head->chunk, head->size);
+  TEST_ASSERT_EQUAL(13, head->size);
+
+  delete_from_node(&head, 0, 16); // from x to unbound
+  TEST_ASSERT_EQUAL(0, head);
+
+  head = create_node();
+  insert_into_node(&head, 0, "Hello, World!");
+  TEST_ASSERT_EQUAL(13, head->size);
+  delete_from_node(&head, 14, 1); // from unbound to unbound
+  TEST_ASSERT_EQUAL(true, head != 0);
+
+  delete_from_node(&head, 30, 1); // from unbound to unbound
+  TEST_ASSERT_EQUAL(true, head != 0);
+
+  insert_into_node(&head, 30, "Hello, World!"); // to unbound
+}
+
 void test_delete_and_merge(void) {
   Node *head = create_node();
   insert_into_node(&head, 0,
@@ -309,6 +332,7 @@ void test_line_node_delete_and_merge(void) {
 }
 
 #include "document.h"
+Document *g_d = 0;
 
 void test_document_init(void) {
   Document doc;
@@ -361,8 +385,18 @@ void test_document_build_index(void) {
   }
 
   document_build_index(&doc, 2);
+  // document_print_structure(&doc);
 
-  TEST_ASSERT_EQUAL(5, doc.line_index.index_size);
+  /*
+  Index 0 -> LineNode starting with: "Line 1"
+  Index 1 -> LineNode starting with: "Line 3"
+  Index 2 -> LineNode starting with: "Line 5"
+  Index 3 -> LineNode starting with: "Line 7"
+  Index 4 -> LineNode starting with: "Line 9"
+  Index 5 -> LineNode starting with: ""
+  */
+
+  TEST_ASSERT_EQUAL(6, doc.line_index.index_size);
   LineNode *ln = doc.line_index.index[0];
   TEST_ASSERT_EQUAL_STRING("Line 1", ln->head->chunk);
 
@@ -416,6 +450,7 @@ int main(void) {
   RUN_TEST(test_merge_nodes);
   RUN_TEST(test_insert_into_node);
   RUN_TEST(test_delete_from_node);
+  RUN_TEST(test_delete_from_node_wrong_index);
   RUN_TEST(test_delete_and_merge);
   RUN_TEST(test_complex_modifications);
 

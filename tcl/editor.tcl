@@ -1,6 +1,6 @@
 package provide editor 0.1
 
-set BUFFER {}
+set BUFFER [concat [list "" "" "" "" "" "" "" "" "" "" "" "" "" ""]]
 set searchpattern ""
 set cursorPosition [list 0 0]
 set previousCursorPosition [list 0 0]
@@ -15,56 +15,55 @@ pack .content -side top -fill both -expand true
 canvas .content.canvas -width 500 -height 300
 pack .content.canvas -side left -fill both -expand true
 
-frame .content.frame
-set frame_id [.content.canvas create window 0 0 -anchor nw -window .content.frame]
-
 proc update_line {row} {
     global BUFFER cursorPosition monoFont
-
     set line [lindex $BUFFER $row]
-    set cursorPos [lindex $cursorPosition 1]
+    .content.canvas delete "line$row"
+
+    .content.canvas create text 10 [expr {20 * $row}] -anchor nw -font $monoFont -text $line -tags "line$row"
 
     if {$row == [lindex $cursorPosition 0]} {
-        set beforeCursor [string range $line 0 [expr {$cursorPos - 1}]]
-        set cursorChar [string index $line $cursorPos]
-        set afterCursor [string range $line [expr {$cursorPos + 1}] end]
-
-        set lineWithCursor "$beforeCursor\[$cursorChar\]$afterCursor"
-        .content.frame.line$row configure -text $lineWithCursor
-    } else {
-        .content.frame.line$row configure -text $line
+        draw_cursor_box
     }
 }
 
 proc update_display {} {
-    global BUFFER cursorPosition monoFont
-
-    foreach widget [winfo children .content.frame] {
-        destroy $widget
-    }
+    global BUFFER monoFont
+    .content.canvas delete all
 
     set row 0
     foreach line $BUFFER {
-        if {$row == [lindex $cursorPosition 0]} {
-            set cursorPos [lindex $cursorPosition 1]
-
-            set beforeCursor [string range $line 0 [expr {$cursorPos - 1}]]
-            set cursorChar [string index $line $cursorPos]
-            set afterCursor [string range $line [expr {$cursorPos + 1}] end]
-
-            set lineWithCursor "$beforeCursor\[$cursorChar\]$afterCursor"
-            label .content.frame.line$row -text $lineWithCursor -anchor w -font $monoFont
-        } else {
-            label .content.frame.line$row -text "$line" -anchor w -font $monoFont
-        }
-        pack .content.frame.line$row -side top -fill x
+        .content.canvas create text 10 [expr {20 * $row}] -anchor nw -font $monoFont -text $line -tags "line$row"
         incr row
     }
+
+    draw_cursor_box
 }
+
+proc draw_cursor_box {} {
+    global BUFFER monoFont cursorPosition
+
+    .content.canvas delete selected_box
+
+    set row [lindex $cursorPosition 0]
+    set col [lindex $cursorPosition 1]
+
+    set line [lindex $BUFFER $row]
+
+    set char_width [font measure $monoFont " "]
+
+    set x1 [expr {10 + $col * $char_width}]
+    set x2 [expr {$x1 + $char_width}]
+
+    set y1 [expr {20 * $row}]
+    set y2 [expr {$y1 + 20}]
+
+    .content.canvas create rectangle $x1 $y1 $x2 $y2 -outline black -width 2 -tags selected_box
+}
+
 
 proc move_cursor {direction} {
     global BUFFER cursorPosition previousCursorPosition
-
     set previousCursorPosition $cursorPosition
 
     switch -- $direction {
@@ -108,22 +107,6 @@ bind . <Key-Up> {move_cursor up}
 bind . <Key-Down> {move_cursor down}
 bind . <Key-Left> {move_cursor left}
 bind . <Key-Right> {move_cursor right}
-
-set BUFFER {
-    "This is line 1."
-    "This is line 2."
-    "This is line 3."
-    "This is line 4."
-    "This is line 5."
-    "This is line 6."
-    "This is line 7."
-    "This is line 8."
-    "This is line 9."
-    "This is line 10."
-}
-
-update_display
-
 bind . <KeyPress> {handle_key_press %K}
 
 proc handle_key_press {k} {
@@ -164,5 +147,7 @@ proc set_cursor_pos {line col} {
 }
 
 proc update_viewport {} {
-    networking::send "viewport 0 10"
+    global BUFFER
+    set len [llength $BUFFER]
+    networking::send "viewport 0 $len"
 }

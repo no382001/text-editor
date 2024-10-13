@@ -6,4 +6,5 @@ source tcl/networking.tcl
 source tcl/editor.tcl
 
 networking::connect
+update_display
 update_viewport

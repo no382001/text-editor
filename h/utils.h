@@ -48,7 +48,7 @@ LogLevel get_current_log_level();
 #define log_message(level, message, ...)
 #endif
 //
-
+/*
 static void print_path() {
   char cwd[PATH_MAX];
 
@@ -58,6 +58,7 @@ static void print_path() {
     perror("getcwd() error");
   }
 }
+*/
 
 #define chk_ptr(p)                                                             \
   do {                                                                         \

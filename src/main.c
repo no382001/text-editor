@@ -20,8 +20,8 @@ int main() {
   Document d;
   document_init(&d);
   g_d = &d;
-  print_path();
-  document_load_file(&d, "src/node.c");
+  // print_path();
+  document_load_file(&d, "src/document.c");
   document_build_index(&d, 5);
 
   networking_thread();

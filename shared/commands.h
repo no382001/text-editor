@@ -13,8 +13,14 @@ typedef void (*command_fn)(arg_t *, int size);
 typedef struct command_map {
   char *command;
   command_fn f;
+  int arity;
 } command_map_t;
+
+typedef struct {
+  const char *name;
+  const char *repl;
+} key_translation_t;
 
 void key_pressed(arg_t *, int size);
 void key_released(char *userdata);
-command_fn find_function_by_command(const char *command);
+command_fn find_function_by_command(const char *command, int arity);

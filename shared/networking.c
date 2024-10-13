@@ -11,11 +11,36 @@ extern struct lfq_ctx *g_lfq_ctx;
 static void signal_handler(int signum) {
   if (signum == SIGINT || signum == SIGTERM) {
     log_message(INFO, "received termination signal, shutting down...");
-    if (global_network_cfg && global_network_cfg->server_fd > 0) {
-      close(global_network_cfg->server_fd);
+
+    log_message(INFO, "sending termsig to tcl...");
+    send_to_client("term");
+
+    struct linger sl;
+    sl.l_onoff = 1;  // enable linger option
+    sl.l_linger = 0; // close immediately, without delay
+
+    if (setsockopt(global_network_cfg->server_fd, SOL_SOCKET, SO_LINGER, &sl,
+                   sizeof(sl)) < 0) {
+      log_message(ERROR, "setsockopt(SO_LINGER) failed on server");
     }
-    if (global_network_cfg && global_network_cfg->client_fd > 0) {
-      close(global_network_cfg->client_fd);
+
+    log_message(INFO, "closing server_fd...");
+    if (global_network_cfg && global_network_cfg->server_fd > 0 &&
+        close(global_network_cfg->server_fd) == 0) {
+    } else {
+      log_message(ERROR, "cant close server_fd");
+    }
+
+    if (setsockopt(global_network_cfg->client_fd, SOL_SOCKET, SO_LINGER, &sl,
+                   sizeof(sl)) < 0) {
+      log_message(ERROR, "setsockopt(SO_LINGER) failed on client");
+    }
+
+    log_message(INFO, "closing client_fd...");
+    if (global_network_cfg && global_network_cfg->client_fd > 0 &&
+        close(global_network_cfg->client_fd) == 0) {
+    } else {
+      log_message(ERROR, "cant close client_fd");
     }
     exit(0);
   }
@@ -79,8 +104,9 @@ static void init_networking(network_cfg_t *n) {
     close(n->server_fd);
     log_message(ERROR,
                 "bind failed on %d,"
-                "probably in TIME_WAIT see with 'netstat -an | grep :%d'",
-                PORT);
+                " probably in TIME_WAIT check with 'netstat -an | grep :%d' "
+                "and wait some",
+                PORT, PORT);
     exit(1);
   }
 
@@ -140,6 +166,35 @@ static void accept_data(network_cfg_t *n) {
   }
 }
 
+static void parse_and_ex_command(network_cfg_t *n) {
+  char head[50] = {0};
+  if (sscanf(n->buffer, "%s", head) != 1) {
+    log_message(ERROR, "invalid command format: ->%s<-", n->buffer);
+  }
+  char *ptr = n->buffer;
+  sscanf(ptr, "%s", head); // skip command
+  ptr += strlen(head);
+  while (*ptr == ' ')
+    ptr++;
+
+  arg_t args[MAX_ARGS] = {0};
+  int i = 0;
+  while (i < MAX_ARGS && sscanf(ptr, "%s", args[i].data) == 1) {
+    ptr += strlen(args[i].data);
+    // log_message(DEBUG, "arg: ->%s<-", args[i].data);
+    while (*ptr == ' ')
+      ptr++;
+    i++;
+  }
+
+  command_fn f = find_function_by_command(head, i);
+  if (f) {
+    f(args, i);
+  } else {
+    log_message(ERROR, "invalid command: ->%s<-", head);
+  }
+}
+
 static void handle_data(network_cfg_t *n) {
   // check if the client has sent data
   if (n->client_fd > 0 && FD_ISSET(n->client_fd, &n->readfds)) {
@@ -153,36 +208,7 @@ static void handle_data(network_cfg_t *n) {
         n->buffer[len - 1] = '\0';
       }
       log_message(DEBUG, "message from tcl: ->%s<-", n->buffer);
-
-      char head[50] = {0};
-      if (sscanf(n->buffer, "%s", head) != 1) {
-        log_message(ERROR, "invalid command format: ->%s<-", n->buffer);
-        // continue;
-      }
-
-      command_fn f = find_function_by_command(head);
-      // log_message(DEBUG, "func: ->%s<-", head);
-      arg_t args[MAX_ARGS] = {0};
-      if (f != NULL) {
-        int i = 0;
-        char *ptr = n->buffer;
-        sscanf(ptr, "%s", head); // skip command
-        ptr += strlen(head);
-        while (*ptr == ' ')
-          ptr++;
-        while (i < MAX_ARGS && sscanf(ptr, "%s", args[i].data) == 1) {
-          ptr += strlen(args[i].data);
-          // log_message(DEBUG, "arg: ->%s<-", args[i].data);
-          while (*ptr == ' ')
-            ptr++;
-          i++;
-        }
-        // log_message(DEBUG, "sizeof command: ->%d<-", i);
-
-        f(args, i);
-      } else {
-        log_message(ERROR, "invalid command: ->%s<-", head);
-      }
+      parse_and_ex_command(n);
 
     } else if (valread == 0) {
       // client has disconnected

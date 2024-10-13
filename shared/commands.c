@@ -10,6 +10,38 @@
 #include <openssl/evp.h>
 #include <time.h>
 
+key_translation_t key_translation_table[] = {
+    {"space", " "},       {"BackSpace", "BackSpace"},
+    {"Tab", "\t"},        {"Return", "Return"},
+    {"F5", "F5"},
+
+    {"exclam", "!"},      {"at", "@"},
+    {"numbersign", "#"},  {"dollar", "$"},
+    {"percent", "%"},     {"asciicircum", "^"},
+    {"ampersand", "&"},   {"asterisk", "*"},
+    {"parenleft", "("},   {"parenright", ")"},
+    {"minus", "-"},       {"underscore", "_"},
+    {"plus", "+"},        {"equal", "="},
+    {"bracketleft", "["}, {"bracketright", "]"},
+    {"braceleft", "{"},   {"braceright", "}"},
+    {"semicolon", ";"},   {"colon", ":"},
+    {"quote", "'"},       {"doublequote", "\""},
+    {"backslash", "\\"},  {"slash", "/"},
+    {"comma", ","},       {"period", "."},
+    {"less", "<"},        {"greater", ">"},
+    {"question", "?"},    {"bar", "|"},
+    {"grave", "`"},       {"asciitilde", "~"},
+    {NULL, NULL}};
+
+const char *translate_key(const char *key) {
+  for (int i = 0; key_translation_table[i].name != NULL; i++) {
+    if (strcmp(key, key_translation_table[i].name) == 0) {
+      return key_translation_table[i].repl;
+    }
+  }
+  return "";
+}
+
 char *base64_encode(char *buffer, size_t length) {
   BIO *bio = NULL, *b64 = NULL;
   BUF_MEM *bufferPtr = NULL;
@@ -54,10 +86,6 @@ extern Document *g_d;
 // - update viewport
 //  - viewport <start_line> <end_line>
 void viewport(arg_t *args, int size) {
-  if (size != 2) {
-    log_message(ERROR, "got wrong size: %d instead of %d", size, 2);
-    return;
-  }
 
   int from = atoi(args[0].data);
   int to = atoi(args[1].data);
@@ -75,42 +103,48 @@ void viewport(arg_t *args, int size) {
       send_to_client("ch %d %d %s", i, 0, b64uf);
     }
   }
-  send_to_client("pos %d %d", 0, 0);
+  // send_to_client("pos %d %d", 0, 0);
 }
 
 // refactor this so it can handle multiple arguments if needed
 static command_map_t cmd_map[] = {
-    {"key", key_pressed}, {"viewport", viewport}, {NULL, NULL}};
+    {"key", key_pressed, 3}, {"viewport", viewport, 2}, {NULL, NULL}};
 
 // - insert/delete into/from document
 //   - key <col> <row> <button>
 //   - key <col> <row> BackSpace
 void key_pressed(arg_t *args, int size) {
-  if (size != 3) {
-    log_message(ERROR, "got wrong size: %d instead of %d", size, 3);
-    return;
-  }
 
   int line = atoi(args[0].data);
   int col = atoi(args[1].data);
-  char *key = args[2].data;
+  const char *key = args[2].data;
 
   log_message(DEBUG, "key_pressed %d %d %s", line, col, key);
 
-  if (strcmp(key, "space") == 0) {
-    key = " ";
-  } else if (!__isascii(key[0]) && strcmp(key, "BackSpace") != 0) {
-    return;
+  if (strlen(key) != 1) {
+    key = translate_key(key);
+    if (strlen(key) == 0) { // not in the table, its whatever
+      return;
+    }
   }
 
   LineNode *ln = document_find_line(g_d, line);
   print_line_node(ln);
   printf(" -> ");
 
-  if (strcmp(key, "BackSpace") == 0) {
-    delete_from_node(&ln->head, col, 1); // if col is overbound, infinite loop
+  if (!strcmp(key, "F5")) {
+    viewport((arg_t[]){{"0"}, {"14"}}, 2);
+
+  } else if (!strcmp(key, "BackSpace")) {
+    delete_from_node(&ln->head, col, 1);
     print_line_node(ln);
-    send_to_client("pos %d %d", line, col - 1); // this can go to -1
+    send_to_client("pos %d %d", line, col > 0 ? col - 1 : 0);
+
+  } else if (!strcmp(key, "Return")) {
+    line_node_insert_newline(ln, col);
+    viewport((arg_t[]){{"0"}, {"14"}}, 2);
+    send_to_client("pos %d %d", line + 1, 0);
+
   } else {
     insert_into_node(&ln->head, col, key);
     print_line_node(ln);
@@ -120,6 +154,10 @@ void key_pressed(arg_t *args, int size) {
 
   char buf[MSG_BUFFER_SIZE] = {0};
   print_node_to_buffer(ln->head, buf, MSG_BUFFER_SIZE);
+
+  // there might not have been any change in edge cases
+  // so the command is redundant
+
   if (strlen(buf) == 0) {
     send_to_client("el %d %d", line, col);
   } else {
@@ -128,9 +166,9 @@ void key_pressed(arg_t *args, int size) {
   }
 }
 
-command_fn find_function_by_command(const char *command) {
+command_fn find_function_by_command(const char *command, int arity) {
   for (int i = 0; cmd_map[i].command != NULL; i++) {
-    if (strcmp(cmd_map[i].command, command) == 0) {
+    if (strcmp(cmd_map[i].command, command) == 0 && arity == cmd_map[i].arity) {
       return cmd_map[i].f;
     }
   }
