@@ -190,7 +190,9 @@ void document_delete_char(Document *doc, int line, int col) {
 
     Node *head = current_line->head;
     while (head) {
-      line_node_append(previous_line, head->chunk);
+      char buff[CHUNK_SIZE];
+      snprintf(buff, CHUNK_SIZE, "%.*s", (int)head->size, head->chunk);
+      line_node_append(previous_line, buff); // this is sketchy
       head = head->next;
     }
 

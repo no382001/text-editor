@@ -113,9 +113,8 @@ void viewport(arg_t *args, int size) {
   // send_to_client("pos %d %d", 0, 0);
 }
 
-// refactor this so it can handle multiple arguments if needed
 static command_map_t cmd_map[] = {{"key", key_pressed, 3},
-                                  {"viewport", viewport, 2},
+                                  {"viewport", viewport, 2}, // this is fundamentally wrong
                                   {"viewport", viewport, 3},
                                   {NULL, NULL}};
 

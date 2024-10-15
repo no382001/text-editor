@@ -6,7 +6,7 @@
   - introduce move_<up/down/left/right> command
 
 - i might need to lose the indexing all-together, lots of line changes are expected
-- i can get 'malloc(): invalid size (unsorted)', after many modification in b64 bc my strings are not null terminated in bufferpool, use snprintf
+- [fix] add null termination in buffer-pool, could save a lot of converting cycles 
 - somethimes the messages get bunched together like '13ch', idk how this happens but i need a message queue for this, no workaround comes to mind
 
 c -> tcl:
