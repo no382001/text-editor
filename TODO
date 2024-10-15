@@ -5,8 +5,15 @@
 - cursor movement is not really consistent, decide how the c -> tcl commands change cursor pos
   - introduce move_<up/down/left/right> command
 
-- i might need to lose the indexing all-together
+- i might need to lose the indexing all-together, lots of line changes are expected
+- i can get 'malloc(): invalid size (unsorted)', after many modification in b64 bc my strings are not null terminated in bufferpool, use snprintf
+- somethimes the messages get bunched together like '13ch', idk how this happens but i need a message queue for this, no workaround comes to mind
 
+c -> tcl:
   el <line> <col> // empty line
-  viewport <n1> <n2> -> n1..n2 -> ch <line> <col> <b64line> 
+  ch <line> <col> <b64line>
+
+tcl -> c -> tcl:
+  viewport <n1> <n2>
+  viewport <n1> <n2> <offset> -> n1..n2 -> ch <line> <col> <b64line> 
   key <line> <col> <button> -> ch <line> <col> <b64line>

@@ -84,16 +84,22 @@ cleanup:
 extern Document *g_d;
 
 #define EDITOR_LINES "14"
+
+// i need to somehow catch the last viewport and keep sending that back on
+// modifications
+
 // - update viewport
 //  - viewport <start_line> <end_line>
 void viewport(arg_t *args, int size) {
 
+  // maybe a bit confusing
   int from = atoi(args[0].data);
   int to = atoi(args[1].data);
+  int offset = atoi(args[2].data); // default is 0 if it cant convert
 
-  for (int i = from; i < to; i++) {
+  for (int i = from; i < from + to; i++) {
 
-    LineNode *ln = document_find_line(g_d, i);
+    LineNode *ln = document_find_line(g_d, i + offset);
 
     char buf[MSG_BUFFER_SIZE] = {0};
     print_node_to_buffer(ln->head, buf, MSG_BUFFER_SIZE);
@@ -108,8 +114,10 @@ void viewport(arg_t *args, int size) {
 }
 
 // refactor this so it can handle multiple arguments if needed
-static command_map_t cmd_map[] = {
-    {"key", key_pressed, 3}, {"viewport", viewport, 2}, {NULL, NULL}};
+static command_map_t cmd_map[] = {{"key", key_pressed, 3},
+                                  {"viewport", viewport, 2},
+                                  {"viewport", viewport, 3},
+                                  {NULL, NULL}};
 
 // - insert/delete into/from document
 //   - key <col> <row> <button>
@@ -136,15 +144,14 @@ void key_pressed(arg_t *args, int size) {
 
   } else if (!strcmp(key, "BackSpace")) {
     document_delete_char(g_d, line, col);
-    document_build_index(g_d,DOCUMENT_INDEX_GAP);
+    document_build_index(g_d, DOCUMENT_INDEX_GAP);
     viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
-    //send_to_client("pos %d %d", line, col > 0 ? col - 1 : 0);
+    // send_to_client("pos %d %d", line, col > 0 ? col - 1 : 0);
     return;
-    // maybe its the indexing?
 
   } else if (!strcmp(key, "Return")) {
     line_node_insert_newline(ln, col);
-    document_build_index(g_d,DOCUMENT_INDEX_GAP);
+    document_build_index(g_d, DOCUMENT_INDEX_GAP);
     viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
     send_to_client("pos %d %d", line + 1, 0);
     return;

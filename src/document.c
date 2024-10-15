@@ -185,7 +185,8 @@ void document_delete_char(Document *doc, int line, int col) {
   if (col == 0 && line > 0) {
     LineNode *current_line = document_find_line(doc, line);
     LineNode *previous_line = document_find_line(doc, line - 1);
-    log_message(DEBUG,"[1] doc_del_char lines curr:%p, prev:%p",current_line,previous_line);
+    log_message(DEBUG, "[1] doc_del_char lines curr:%p, prev:%p", current_line,
+                previous_line);
 
     Node *head = current_line->head;
     while (head) {

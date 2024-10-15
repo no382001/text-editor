@@ -1,5 +1,8 @@
 package provide editor 0.1
 
+set MAX_LINES 14
+set VIEWPORT_OFFSET 0
+
 set BUFFER [concat [list "" "" "" "" "" "" "" "" "" "" "" "" "" ""]]
 set searchpattern ""
 set cursorPosition [list 0 0]
@@ -63,27 +66,39 @@ proc draw_cursor_box {} {
 
 
 proc move_cursor {direction} {
-    global BUFFER cursorPosition previousCursorPosition
+    global BUFFER cursorPosition previousCursorPosition VIEWPORT_OFFSET MAX_LINES
     set previousCursorPosition $cursorPosition
 
     switch -- $direction {
-        "up" {
+       "up" {
+
+            if {$VIEWPORT_OFFSET > 0 && [lindex $cursorPosition 0] == 0} {
+                set VIEWPORT_OFFSET [expr {$VIEWPORT_OFFSET - 1}]
+                networking::send "viewport 0 $MAX_LINES $VIEWPORT_OFFSET"
+            }
+
             if {[lindex $cursorPosition 0] > 0} {
                 set cursorPosition [list [expr {[lindex $cursorPosition 0] - 1}] [lindex $cursorPosition 1]]
-                # bound check
-                set lineLen [string length [lindex $BUFFER [lindex $cursorPosition 0]]]
-                if {[lindex $cursorPosition 1] > $lineLen} {
-                    set cursorPosition [list [lindex $cursorPosition 0] $lineLen]
-                }
+            }
+
+            set lineLen [string length [lindex $BUFFER [lindex $cursorPosition 0]]]
+            if {[lindex $cursorPosition 1] > $lineLen} {
+                set cursorPosition [list [lindex $cursorPosition 0] $lineLen]
             }
         }
         "down" {
+            if {[lindex $cursorPosition 0] == [expr {$MAX_LINES - 1}]} {
+                set VIEWPORT_OFFSET [expr {$VIEWPORT_OFFSET + 1}]
+                networking::send "viewport 0 $MAX_LINES $VIEWPORT_OFFSET"
+            }
+
             if {[lindex $cursorPosition 0] < [expr {[llength $BUFFER] - 1}]} {
                 set cursorPosition [list [expr {[lindex $cursorPosition 0] + 1}] [lindex $cursorPosition 1]]
-                set lineLen [string length [lindex $BUFFER [lindex $cursorPosition 0]]]
-                if {[lindex $cursorPosition 1] > $lineLen} {
-                    set cursorPosition [list [lindex $cursorPosition 0] $lineLen]
-                }
+            }
+
+            set lineLen [string length [lindex $BUFFER [lindex $cursorPosition 0]]]
+            if {[lindex $cursorPosition 1] > $lineLen} {
+                set cursorPosition [list [lindex $cursorPosition 0] $lineLen]
             }
         }
         "left" {
