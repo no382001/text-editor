@@ -8,7 +8,7 @@ namespace eval commands {
         set parts [split $string " "]
         set command [lindex $parts 0]
     
-        ${log}::notice "$parts"
+        ${log}::notice "$string"
 
         switch -- $command {
             "ch" {

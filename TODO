@@ -7,7 +7,7 @@
 
 - i might need to lose the indexing all-together, lots of line changes are expected
 - [fix] add null termination in buffer-pool, could save a lot of converting cycles 
-- somethimes the messages get bunched together like '13ch', idk how this happens but i need a message queue for this, no workaround comes to mind
+- \n is read into the line, it shouldnt be
 
 c -> tcl:
   el <line> <col> // empty line

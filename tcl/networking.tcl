@@ -69,7 +69,7 @@ namespace eval networking {
             networking::connect
         }
 
-        set data [read $sock]
+        set data [gets $sock] ;# read until newline
         commands::eval_command $data
     }
 }

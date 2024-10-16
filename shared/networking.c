@@ -222,7 +222,7 @@ static void handle_data(network_cfg_t *n) {
 static void send_data(network_cfg_t *n, const char *data) {
   if (n->client_fd > 0) {
     ssize_t bytes_sent = send(n->client_fd, data, strlen(data), 0);
-
+    
     if (bytes_sent < 0) {
       log_message(ERROR, "error sending");
       close(n->client_fd);
@@ -247,7 +247,10 @@ void send_to_client(const char *format, ...) {
   vsnprintf(buffer, sizeof(buffer), format, args);
 
   va_end(args);
-
+  
+  if (buffer[strlen(buffer) - 1] != '\n'){
+    strcat(buffer,"\n");
+  }
   send_data(global_network_cfg, buffer);
 }
 
