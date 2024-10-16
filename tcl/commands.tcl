@@ -28,6 +28,10 @@ namespace eval commands {
             "term" {
                 exit 0
             }
+            "move" {
+                set dir [lindex $parts 1]
+                move_cursor $dir
+            }
             default {
                 puts "unknown command: $command"
             }

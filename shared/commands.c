@@ -140,24 +140,24 @@ void key_pressed(arg_t *args, int size) {
 
   if (!strcmp(key, "F5")) {
     viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
+    return;
 
   } else if (!strcmp(key, "BackSpace")) {
     document_delete_char(g_d, line, col);
     document_build_index(g_d, DOCUMENT_INDEX_GAP);
-    viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
-    // send_to_client("pos %d %d", line, col > 0 ? col - 1 : 0);
+    if (col == 0){
+      viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
+    }
     return;
-
   } else if (!strcmp(key, "Return")) {
     line_node_insert_newline(ln, col);
     document_build_index(g_d, DOCUMENT_INDEX_GAP);
     viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
-    send_to_client("pos %d %d", line + 1, 0);
+    send_to_client("move nextline");
     return;
 
   } else {
     insert_into_node(&ln->head, col, key);
-    send_to_client("pos %d %d", line, col + 1);
   }
 
   char buf[MSG_BUFFER_SIZE] = {0};
@@ -172,6 +172,12 @@ void key_pressed(arg_t *args, int size) {
   } else {
     char *b64uf = base64_encode(buf, strlen(buf));
     send_to_client("ch %d %s", line, b64uf);
+  }
+
+  if (!strcmp(key, "BackSpace")){
+    send_to_client("move left");
+  } else {
+    send_to_client("move right");
   }
 }
 

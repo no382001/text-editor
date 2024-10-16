@@ -2,6 +2,9 @@
 #include "utils.h"
 #include <assert.h>
 
+#undef log_message
+#define log_message(level, message, ...)
+
 /*
 
 BufferPool pre-allocates memory for the strings reducing syscalls significantly

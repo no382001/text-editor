@@ -59,12 +59,13 @@ static void print_path() {
   }
 }
 */
-
+#include <signal.h>
+void signal_handler(int signum);
 #define chk_ptr(p)                                                             \
   do {                                                                         \
     if (!p) {                                                                  \
       log_message(ERROR, "chk_ptr failed");                                    \
-      exit(1);                                                                 \
+      signal(SIGTERM,signal_handler);                                          \
     }                                                                          \
   } while (0)
 

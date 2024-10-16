@@ -111,6 +111,17 @@ proc move_cursor {direction} {
                 set cursorPosition [list [lindex $cursorPosition 0] [expr {[lindex $cursorPosition 1] + 1}]]
             }
         }
+        "nextline" {
+            if {[lindex $cursorPosition 0] < [expr {[llength $BUFFER] - 1}]} {
+                set cursorPosition [list [expr {[lindex $cursorPosition 0] + 1}] 0]
+            } else {
+                # stay on the last line at the beginning
+                set cursorPosition [list [lindex $cursorPosition 0] 0]
+            }
+        }
+        default {
+            puts "invalid direction"
+        }
     }
     
     # update only changes

@@ -1,5 +1,6 @@
 #include <signal.h>
 #include <unistd.h>
+#include <execinfo.h>
 
 #include "commands.h"
 #include "networking.h"
@@ -8,9 +9,15 @@
 static network_cfg_t *global_network_cfg;
 extern struct lfq_ctx *g_lfq_ctx;
 
-static void signal_handler(int signum) {
-  if (signum == SIGINT || signum == SIGTERM) {
-    log_message(INFO, "received termination signal, shutting down...");
+#define STACK_SIZE 1024
+
+void signal_handler(int signum) {
+  if (signum == SIGINT || signum == SIGTERM || signum == SIGSEGV) {
+    if (signum == SIGSEGV) {
+      log_message(ERROR, "received segmentation fault, shutting down...");
+    } else {
+      log_message(INFO, "received termination signal, shutting down...");
+    }
 
     log_message(INFO, "sending termsig to tcl...");
     send_to_client("term");
@@ -59,8 +66,13 @@ static void setup_signal_handling(network_cfg_t *n) {
     exit(1);
   }
 
-  if (sigaction(SIGTERM, &sa, NULL) < 0) {
+  if (sigaction(SIGSEGV, &sa, NULL) < 0) {
     log_message(ERROR, "sigaction for SIGTERM failed");
+    exit(1);
+  }
+
+  if (sigaction(SIGTERM, &sa, NULL) < 0) {
+    log_message(ERROR, "sigaction for SIGSEGV failed");
     exit(1);
   }
 
@@ -246,7 +258,11 @@ void send_to_client(const char *format, ...) {
   vsnprintf(buffer, sizeof(buffer), format, args);
 
   va_end(args);
-  
+  // still need this to be generic
+  if (buffer[strlen(buffer) - 1] != '\n'){
+    strcat(buffer,"\n");
+  }
+
   send_data(global_network_cfg, buffer);
 }
 

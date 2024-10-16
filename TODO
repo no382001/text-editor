@@ -6,12 +6,12 @@
   - introduce move_<up/down/left/right> command
 
 - i might need to lose the indexing all-together, lots of line changes are expected
-- [fix] add null termination in buffer-pool, could save a lot of converting cycles 
-- \n is read into the line, it shouldnt be
+- [fix] add null termination in buffer-pool, could save a lot of converting cycles
 
 c -> tcl:
   el <line> <col> // empty line
   ch <line> <col> <b64line>
+  move <up/down/left/right>
 
 tcl -> c -> tcl:
   viewport <n1> <n2>
