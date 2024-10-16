@@ -159,8 +159,8 @@ void document_load_file(Document *d, char *filename) {
   size_t read;
 
   while ((read = getline(&line, &len, file)) != -1) {
-    if (line[read - 1] == '\n') {
-      line[read - 1] = '\0';
+    if (line[len - 1] == '\n') {
+      line[len - 1] = '\0';
     }
     document_append(d, line);
     document_newline(d);

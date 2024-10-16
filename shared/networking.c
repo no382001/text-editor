@@ -237,7 +237,6 @@ void send_to_client(const char *format, ...) {
   if (!global_network_cfg) {
     return;
   }
-  usleep(10000); // haha fuck you message queue
 
   char buffer[1024];
 
@@ -248,9 +247,6 @@ void send_to_client(const char *format, ...) {
 
   va_end(args);
   
-  if (buffer[strlen(buffer) - 1] != '\n'){
-    strcat(buffer,"\n");
-  }
   send_data(global_network_cfg, buffer);
 }
 
