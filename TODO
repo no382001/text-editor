@@ -7,6 +7,7 @@
 
 - i might need to lose the indexing all-together, lots of line changes are expected
 - [fix] add null termination in buffer-pool, could save a lot of converting cycles
+- if i delete the 'newline' the whole line gets lost, prolly bc im discarding eveything after the n, in print buffer?
 
 c -> tcl:
   el <line> <col> // empty line

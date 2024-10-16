@@ -64,14 +64,12 @@ proc draw_cursor_box {} {
     .content.canvas create rectangle $x1 $y1 $x2 $y2 -outline black -width 2 -tags selected_box
 }
 
-
 proc move_cursor {direction} {
     global BUFFER cursorPosition previousCursorPosition VIEWPORT_OFFSET MAX_LINES
     set previousCursorPosition $cursorPosition
 
     switch -- $direction {
-       "up" {
-
+        "up" {
             if {$VIEWPORT_OFFSET > 0 && [lindex $cursorPosition 0] == 0} {
                 set VIEWPORT_OFFSET [expr {$VIEWPORT_OFFSET - 1}]
                 networking::send "viewport 0 $MAX_LINES $VIEWPORT_OFFSET"
@@ -103,20 +101,23 @@ proc move_cursor {direction} {
         }
         "left" {
             if {[lindex $cursorPosition 1] > 0} {
+                # move left within the current line
                 set cursorPosition [list [lindex $cursorPosition 0] [expr {[lindex $cursorPosition 1] - 1}]]
+            } elseif {[lindex $cursorPosition 0] > 0} {
+                # move to the end of the previous line
+                set prevLine [expr {[lindex $cursorPosition 0] - 1}]
+                set lineLen [string length [lindex $BUFFER $prevLine]]
+                set cursorPosition [list $prevLine $lineLen]
             }
         }
         "right" {
-            if {[lindex $cursorPosition 1] < [string length [lindex $BUFFER [lindex $cursorPosition 0]]]} {
+            set lineLen [string length [lindex $BUFFER [lindex $cursorPosition 0]]]
+            if {[lindex $cursorPosition 1] < $lineLen} {
+                # move right within the current line
                 set cursorPosition [list [lindex $cursorPosition 0] [expr {[lindex $cursorPosition 1] + 1}]]
-            }
-        }
-        "nextline" {
-            if {[lindex $cursorPosition 0] < [expr {[llength $BUFFER] - 1}]} {
+            } elseif {[lindex $cursorPosition 0] < [expr {[llength $BUFFER] - 1}]} {
+                # move to the start of the next line
                 set cursorPosition [list [expr {[lindex $cursorPosition 0] + 1}] 0]
-            } else {
-                # stay on the last line at the beginning
-                set cursorPosition [list [lindex $cursorPosition 0] 0]
             }
         }
         default {
@@ -128,6 +129,7 @@ proc move_cursor {direction} {
     update_line [lindex $previousCursorPosition 0]
     update_line [lindex $cursorPosition 0]
 }
+
 
 bind . <Key-Up> {move_cursor up}
 bind . <Key-Down> {move_cursor down}

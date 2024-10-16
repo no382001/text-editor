@@ -65,7 +65,7 @@ void signal_handler(int signum);
   do {                                                                         \
     if (!p) {                                                                  \
       log_message(ERROR, "chk_ptr failed");                                    \
-      signal(SIGTERM,signal_handler);                                          \
+      signal(SIGTERM, signal_handler);                                         \
     }                                                                          \
   } while (0)
 

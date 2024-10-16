@@ -113,10 +113,11 @@ void viewport(arg_t *args, int size) {
   // send_to_client("pos %d %d", 0, 0);
 }
 
-static command_map_t cmd_map[] = {{"key", key_pressed, 3},
-                                  {"viewport", viewport, 2}, // this is fundamentally wrong
-                                  {"viewport", viewport, 3},
-                                  {NULL, NULL}};
+static command_map_t cmd_map[] = {
+    {"key", key_pressed, 3},
+    {"viewport", viewport, 2}, // this is fundamentally wrong
+    {"viewport", viewport, 3},
+    {NULL, NULL}};
 
 // - insert/delete into/from document
 //   - key <col> <row> <button>
@@ -145,15 +146,17 @@ void key_pressed(arg_t *args, int size) {
   } else if (!strcmp(key, "BackSpace")) {
     document_delete_char(g_d, line, col);
     document_build_index(g_d, DOCUMENT_INDEX_GAP);
-    if (col == 0){
+    send_to_client("move left");
+    if (col == 0) {
       viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
     }
-    return;
+    ln = document_find_line(g_d, line);
+
   } else if (!strcmp(key, "Return")) {
     line_node_insert_newline(ln, col);
     document_build_index(g_d, DOCUMENT_INDEX_GAP);
     viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
-    send_to_client("move nextline");
+    send_to_client("move right");
     return;
 
   } else {
@@ -163,7 +166,6 @@ void key_pressed(arg_t *args, int size) {
   char buf[MSG_BUFFER_SIZE] = {0};
   chk_ptr(ln->head);
   print_node_to_buffer(ln->head, buf, MSG_BUFFER_SIZE);
-
   // there might not have been any change in edge cases
   // so the command is redundant
 
@@ -174,9 +176,7 @@ void key_pressed(arg_t *args, int size) {
     send_to_client("ch %d %s", line, b64uf);
   }
 
-  if (!strcmp(key, "BackSpace")){
-    send_to_client("move left");
-  } else {
+  if (strcmp(key, "BackSpace")) {
     send_to_client("move right");
   }
 }

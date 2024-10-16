@@ -31,7 +31,7 @@ void log_message_impl(LogLevel level, const char *file, int line,
   char time_str[100];
   time_t now = time(NULL);
   struct tm *local_time = localtime(&now);
-  strftime(time_str, sizeof(time_str), "[%a %b %d %H:%M:%S %Z %Y]", local_time);
+  strftime(time_str, sizeof(time_str), "[%b %d %H:%M:%S]", local_time);
 
   const char *level_str = log_lvl_to_str(level);
 

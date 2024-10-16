@@ -245,6 +245,10 @@ void print_node_to_buffer(Node *head, char *buffer, int buffer_size) {
   while (node) {
     for (int i = 0; i < node->size; i++) {
       if (buffer_index < buffer_size - 1) {
+        if (node->chunk[i] == '\n') {
+          buffer[buffer_index] = '\0';
+          return;
+        }
         buffer[buffer_index++] = node->chunk[i];
       } else {
         buffer[buffer_index] = '\0';

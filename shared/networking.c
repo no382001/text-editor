@@ -1,6 +1,6 @@
+#include <execinfo.h>
 #include <signal.h>
 #include <unistd.h>
-#include <execinfo.h>
 
 #include "commands.h"
 #include "networking.h"
@@ -47,7 +47,8 @@ void signal_handler(int signum) {
     if (global_network_cfg && global_network_cfg->client_fd > 0 &&
         close(global_network_cfg->client_fd) == 0) {
     } else {
-      log_message(ERROR, "cant close client_fd");
+      log_message(INFO,
+                  "cant close client_fd, but it should have closed already");
     }
     exit(0);
   }
@@ -234,7 +235,7 @@ static void handle_data(network_cfg_t *n) {
 static void send_data(network_cfg_t *n, const char *data) {
   if (n->client_fd > 0) {
     ssize_t bytes_sent = send(n->client_fd, data, strlen(data), 0);
-    
+
     if (bytes_sent < 0) {
       log_message(ERROR, "error sending");
       close(n->client_fd);
@@ -259,8 +260,8 @@ void send_to_client(const char *format, ...) {
 
   va_end(args);
   // still need this to be generic
-  if (buffer[strlen(buffer) - 1] != '\n'){
-    strcat(buffer,"\n");
+  if (buffer[strlen(buffer) - 1] != '\n') {
+    strcat(buffer, "\n");
   }
 
   send_data(global_network_cfg, buffer);
