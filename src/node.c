@@ -63,8 +63,6 @@ void merge_nodes(Node *node) {
   }
 }
 
-// maybe i should have some indication as to what happened, so i can handle
-// cursor movemeent better?
 void modify_node(Node **head, size_t index, const char *str, size_t len,
                  ModificationType mod_type) {
   size_t str_index = 0;
@@ -110,9 +108,11 @@ void modify_node(Node **head, size_t index, const char *str, size_t len,
         insert_length = space_available;
       }
 
-      // move existing data to make space for new data
-      memmove(node->chunk + local_index + insert_length,
-              node->chunk + local_index, node->size - local_index);
+      if (node->size){
+        // move existing data to make space for new data
+        memmove(node->chunk + local_index + insert_length,
+                node->chunk + local_index, node->size - local_index);
+      }
       memcpy(node->chunk + local_index, str + str_index, insert_length);
       node->size += insert_length;
       // null term?

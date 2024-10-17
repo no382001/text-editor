@@ -41,44 +41,35 @@ const char *translate_key(const char *key) {
   }
   return "";
 }
+#include <math.h>
+int base64_encode(const char *message, char *buffer, size_t buffer_size) {
+  BIO *bio, *b64;
+  FILE *stream;
 
-char *base64_encode(char *buffer, size_t length) {
-  BIO *bio = NULL, *b64 = NULL;
-  BUF_MEM *bufferPtr = NULL;
-  char *b64text = NULL;
+  int message_len = strlen(message);
+  int encodedSize = 4 * ceil((double)message_len / 3);
 
-  if (length <= 0)
-    goto cleanup;
+  if (buffer_size < encodedSize + 1) {
+    return -1;
+  }
+
+  stream = fmemopen(buffer, buffer_size, "w");
+  if (!stream) {
+    return -1;
+  }
 
   b64 = BIO_new(BIO_f_base64());
-  if (b64 == NULL)
-    goto cleanup;
-
-  bio = BIO_new(BIO_s_mem());
-  if (bio == NULL)
-    goto cleanup;
-
+  bio = BIO_new_fp(stream, BIO_NOCLOSE);
   bio = BIO_push(b64, bio);
+  BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
 
-  if (BIO_write(bio, buffer, (int)length) <= 0)
-    goto cleanup;
+  BIO_write(bio, message, message_len);
+  BIO_flush(bio);
 
-  if (BIO_flush(bio) != 1)
-    goto cleanup;
-
-  BIO_get_mem_ptr(bio, &bufferPtr);
-
-  b64text = (char *)malloc((bufferPtr->length + 1) * sizeof(char));
-  if (b64text == NULL)
-    goto cleanup;
-
-  memcpy(b64text, bufferPtr->data, bufferPtr->length);
-  b64text[bufferPtr->length] = '\0';
-  BIO_set_close(bio, BIO_NOCLOSE);
-
-cleanup:
   BIO_free_all(bio);
-  return b64text;
+  fclose(stream);
+
+  return 0;
 }
 
 extern Document *g_d;
@@ -106,8 +97,9 @@ void viewport(arg_t *args, int size) {
     if (strlen(buf) == 0) {
       send_to_client("el %d", i);
     } else {
-      char *b64uf = base64_encode(buf, strlen(buf));
-      send_to_client("ch %d %s", i, b64uf);
+      char encode[MSG_BUFFER_SIZE] = {0};
+      base64_encode(buf,encode,MSG_BUFFER_SIZE);
+      send_to_client("ch %d %s", i, encode);
     }
   }
   // send_to_client("pos %d %d", 0, 0);
@@ -172,8 +164,9 @@ void key_pressed(arg_t *args, int size) {
   if (strlen(buf) == 0) {
     send_to_client("el %d", line);
   } else {
-    char *b64uf = base64_encode(buf, strlen(buf));
-    send_to_client("ch %d %s", line, b64uf);
+    char encode[MSG_BUFFER_SIZE] = {0};
+      base64_encode(buf,encode,MSG_BUFFER_SIZE);
+      send_to_client("ch %d %s", line, encode);
   }
 
   if (strcmp(key, "BackSpace")) {

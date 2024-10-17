@@ -7,17 +7,17 @@
 
 typedef struct {
   char *buffer;
-  size_t size;
+  int size;
   bool in_use;
 } BufferPoolItem;
 
 typedef struct {
   BufferPoolItem *items;
-  size_t used_count;
-  size_t capacity;
+  int used_count;
+  int capacity;
 } BufferPool;
 
-void buffer_pool_init(size_t initial_capacity);
+void buffer_pool_init(int initial_capacity);
 void buffer_pool_deinit();
-char *buffer_pool_alloc(size_t size);
+char *buffer_pool_alloc(int size);
 void buffer_pool_free(void *ptr);
