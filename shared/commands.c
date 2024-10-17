@@ -98,7 +98,7 @@ void viewport(arg_t *args, int size) {
       send_to_client("el %d", i);
     } else {
       char encode[MSG_BUFFER_SIZE] = {0};
-      base64_encode(buf,encode,MSG_BUFFER_SIZE);
+      base64_encode(buf, encode, MSG_BUFFER_SIZE);
       send_to_client("ch %d %s", i, encode);
     }
   }
@@ -165,8 +165,8 @@ void key_pressed(arg_t *args, int size) {
     send_to_client("el %d", line);
   } else {
     char encode[MSG_BUFFER_SIZE] = {0};
-      base64_encode(buf,encode,MSG_BUFFER_SIZE);
-      send_to_client("ch %d %s", line, encode);
+    base64_encode(buf, encode, MSG_BUFFER_SIZE);
+    send_to_client("ch %d %s", line, encode);
   }
 
   if (strcmp(key, "BackSpace")) {

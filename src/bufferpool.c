@@ -21,7 +21,7 @@ void buffer_pool_init(int initial_capacity) {
   for (int i = 0; i < pool.capacity; i++) {
     // this doesnt seem right BUFFER_SIZE for sure? it POOL_SIZE is the max for
     // a split e.g.
-    pool.items[i].buffer = (char *)calloc(BUFFER_SIZE,sizeof(char));
+    pool.items[i].buffer = (char *)calloc(BUFFER_SIZE, sizeof(char));
     chk_ptr(pool.items[i].buffer);
     pool.items[i].size = BUFFER_SIZE;
     pool.items[i].in_use = false;
@@ -30,7 +30,7 @@ void buffer_pool_init(int initial_capacity) {
 
 void buffer_pool_deinit() {
   for (size_t i = 0; i < pool.capacity; ++i) {
-    if (pool.items[i].buffer){
+    if (pool.items[i].buffer) {
       free(pool.items[i].buffer);
       pool.items[i].buffer = NULL;
     }
@@ -67,7 +67,7 @@ char *buffer_pool_alloc(int size) {
   pool.items = new_items;
 
   for (size_t i = pool.capacity; i < new_capacity; ++i) {
-    pool.items[i].buffer = (char *)calloc(BUFFER_SIZE,sizeof(char));
+    pool.items[i].buffer = (char *)calloc(BUFFER_SIZE, sizeof(char));
     pool.items[i].size = BUFFER_SIZE;
     pool.items[i].in_use = false;
   }

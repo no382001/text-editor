@@ -63,8 +63,24 @@ void merge_nodes(Node *node) {
   }
 }
 
+size_t total_size(Node *head) {
+  size_t total = 0;
+  Node *node = head;
+  while (node) {
+    total += node->size;
+    node = node->next;
+  }
+  return total;
+}
+
 void modify_node(Node **head, size_t index, const char *str, size_t len,
                  ModificationType mod_type) {
+
+  if (index > total_size(*head)) {
+    log_message(DEBUG, "overindexed! returning");
+    return;
+  }
+
   size_t str_index = 0;
 
   while (str_index < len || (mod_type == DELETION && len > 0)) {
@@ -108,7 +124,7 @@ void modify_node(Node **head, size_t index, const char *str, size_t len,
         insert_length = space_available;
       }
 
-      if (node->size){
+      if (node->size) {
         // move existing data to make space for new data
         memmove(node->chunk + local_index + insert_length,
                 node->chunk + local_index, node->size - local_index);

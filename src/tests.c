@@ -169,6 +169,9 @@ void test_delete_from_node_wrong_index(void) {
   delete_from_node(&head, 0, 16); // from x to unbound
   TEST_ASSERT_EQUAL(0, head);
 
+  free(head);
+  head = NULL;
+
   head = create_node();
   insert_into_node(&head, 0, "Hello, World!");
   TEST_ASSERT_EQUAL(13, head->size);
@@ -180,6 +183,7 @@ void test_delete_from_node_wrong_index(void) {
 
   insert_into_node(&head, 30, "Hello, World!"); // to unbound
   TEST_ASSERT_EQUAL(13, head->size);
+  free(head);
 }
 
 void test_delete_and_merge(void) {
@@ -460,7 +464,6 @@ int main(void) {
   RUN_TEST(test_insert_into_node);
   RUN_TEST(test_delete_from_node);
   RUN_TEST(test_delete_from_node_wrong_index);
-/*
   RUN_TEST(test_delete_and_merge);
   RUN_TEST(test_complex_modifications);
 
@@ -479,7 +482,8 @@ int main(void) {
   RUN_TEST(test_document_newline);
   RUN_TEST(test_document_build_index);
   RUN_TEST(test_document_find_line);
-*/
+  /*
+  */
 
   return UNITY_END();
 }
