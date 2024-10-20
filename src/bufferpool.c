@@ -2,8 +2,8 @@
 #include "utils.h"
 #include <assert.h>
 
-#undef log_message
-#define log_message(level, message, ...)
+//#undef log_message
+//#define log_message(level, message, ...)
 
 /*
 
@@ -79,11 +79,11 @@ char *buffer_pool_alloc(int size) {
 }
 
 void buffer_pool_free(void *ptr) {
-  log_message(DEBUG, "buffer pool free pool.in_use: %d", pool.used_count);
   for (size_t i = 0; i < pool.capacity; ++i) {
     if (pool.items[i].buffer == ptr) {
       pool.items[i].in_use = false;
       pool.used_count--;
+      log_message(DEBUG, "buffer pool free pool.in_use: %d", pool.used_count);
       return;
     }
   }

@@ -21,6 +21,7 @@ void document_init(Document *d);
 void document_deinit(Document *d);
 void document_append(Document *d, const char *text);
 void document_newline(Document *d);
+void document_insert_newline(Document *doc, int line, int index);
 void document_print(Document *d);
 void document_print_structure(Document *d);
 void document_build_index(Document *d, size_t gap);

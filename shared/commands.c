@@ -132,7 +132,7 @@ void key_pressed(arg_t *args, int size) {
   LineNode *ln = document_find_line(g_d, line);
 
   if (!strcmp(key, "F5")) {
-    viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
+    viewport((arg_t[]){{"0"}, {EDITOR_LINES}, {""}}, 2);
     return;
 
   } else if (!strcmp(key, "BackSpace")) {
@@ -140,14 +140,14 @@ void key_pressed(arg_t *args, int size) {
     document_build_index(g_d, DOCUMENT_INDEX_GAP);
     send_to_client("move left");
     if (col == 0) {
-      viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
+      viewport((arg_t[]){{"0"}, {EDITOR_LINES}, {""}}, 2);
     }
     ln = document_find_line(g_d, line);
 
   } else if (!strcmp(key, "Return")) {
-    line_node_insert_newline(ln, col);
+    document_insert_newline(g_d, line, col);
     document_build_index(g_d, DOCUMENT_INDEX_GAP);
-    viewport((arg_t[]){{"0"}, {EDITOR_LINES}}, 2);
+    viewport((arg_t[]){{"0"}, {EDITOR_LINES}, {""}}, 2);
     send_to_client("move right");
     return;
 

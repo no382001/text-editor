@@ -51,7 +51,6 @@ void line_node_delete(LineNode *ln, size_t index, size_t length) {
     // merge the current line's head into the previous line's last node
     insert_into_node(&prev_node, prev_node->size, ln->head->chunk);
 
-    // re-link
     if (ln->next) {
       ln->next->prev = ln->prev;
     }
@@ -59,6 +58,7 @@ void line_node_delete(LineNode *ln, size_t index, size_t length) {
 
     free_node(ln->head);
     free(ln);
+    ln = NULL;
   }
 }
 
@@ -80,52 +80,6 @@ void line_node_replace(LineNode *ln, size_t index, const char *text) {
 
 void line_node_insert_char(LineNode *ln, size_t index, char c) {
   modify_node(&ln->head, index, (char *)&c, 1, INSERTION);
-}
-
-void line_node_insert_newline(LineNode *ln, size_t index) {
-
-  // find the node and the local index within that node where the 'split' should
-  // occur
-  Node *current_node = ln->head;
-  size_t current_pos = 0;
-
-  while (current_node && current_pos + current_node->size <= index) {
-    current_pos += current_node->size;
-    current_node = current_node->next;
-  }
-
-  // if the index is exactly at the end of the line, just create a new line
-  if (!current_node || index == current_pos + current_node->size) {
-    LineNode *new_ln = new_line(ln);
-    new_ln->next = ln->next;
-    if (ln->next) {
-      ln->next->prev = new_ln;
-    }
-    ln->next = new_ln;
-    new_ln->prev = ln;
-    return;
-  }
-
-  // calculate the local index within the current node
-  size_t local_index = index - current_pos;
-
-  // now create a new line and transfer the content after the index to it
-  LineNode *new_ln = new_line(ln);
-
-  // copy the content after the local index to the new node
-  size_t split_size = current_node->size - local_index;
-  memcpy(new_ln->head->chunk, current_node->chunk + local_index, split_size);
-  new_ln->head->size = split_size;
-
-  current_node->size = local_index;
-
-  // insert the new line after the current one
-  new_ln->next = ln->next;
-  if (ln->next) {
-    ln->next->prev = new_ln;
-  }
-  ln->next = new_ln;
-  new_ln->prev = ln;
 }
 
 int line_node_size(LineNode *ln) {

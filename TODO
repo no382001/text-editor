@@ -1,13 +1,14 @@
 
-- history
-  - undo/redo
+- [feat] history
+- [feat] viewport horizontal offset
 
-- cursor movement is not really consistent, decide how the c -> tcl commands change cursor pos
-  - introduce move_<up/down/left/right> command
+- [rework] ui, enclose it into a resizable box, text size?
+- [feat] save/load/open/close file
+- [feat] top-level command layer <- that can just basically send tcp commands? or should this be in the target lang?
 
-- i might need to lose the indexing all-together, lots of line changes are expected
 - [fix] add null termination in buffer-pool, could save a lot of converting cycles
-- if i delete the 'newline' the whole line gets lost, prolly bc im discarding eveything after the n, in print buffer?
+- [fix] del should delete the prev char not the curr
+
 
 c -> tcl:
   el <line> <col> // empty line
@@ -16,5 +17,7 @@ c -> tcl:
 
 tcl -> c -> tcl:
   viewport <n1> <n2>
-  viewport <n1> <n2> <offset> -> n1..n2 -> ch <line> <col> <b64line> 
-  key <line> <col> <button> -> ch <line> <col> <b64line>
+  viewport <n1> <n2> <offset>
+    -> n1..n2 -> ch <line> <col> <b64line> 
+  key <line> <col> <button>
+    -> ch <line> <col> <b64line>

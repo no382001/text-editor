@@ -175,8 +175,11 @@ void document_delete_line(Document *doc, int line) {
   if (!ln) {
     return;
   }
-
+  LineNode *next = ln->next;
   line_node_delete(ln, 0, line_node_size(ln));
+  if (line == 0) {
+    doc->first_line = next;
+  }
 
   doc->line_count--;
 }
@@ -198,4 +201,52 @@ void document_delete_char(Document *doc, int line, int col) {
   } else {
     line_node_delete(document_find_line(doc, line), col, 1);
   }
+}
+
+void document_insert_newline(Document *doc, int line, int index) {
+  LineNode *ln = document_find_line(doc, line);
+  Node *current_node = ln->head;
+  int current_pos = 0;
+
+  while (current_node && current_pos + current_node->size <= index) {
+    current_pos += current_node->size;
+    current_node = current_node->next;
+  }
+
+  // if the index is exactly at the end of the line, just create a new line
+  if (!current_node || index == current_pos + current_node->size) {
+    LineNode *new_ln = new_line(ln);
+    new_ln->next = ln->next;
+    if (ln->next) {
+      ln->next->prev = new_ln;
+    }
+    ln->next = new_ln;
+    new_ln->prev = ln;
+
+    doc->line_count++;
+    return;
+  }
+
+  // calculate the local index within the current node
+  int local_index = index - current_pos;
+
+  // now create a new line and transfer the content after the index to it
+  LineNode *new_ln = new_line(ln);
+
+  // copy the content after the local index to the new node
+  int split_size = current_node->size - local_index;
+  memcpy(new_ln->head->chunk, current_node->chunk + local_index, split_size);
+  new_ln->head->size = split_size;
+
+  current_node->size = local_index;
+
+  // insert the new line after the current one
+  new_ln->next = ln->next;
+  if (ln->next) {
+    ln->next->prev = new_ln;
+  }
+  ln->next = new_ln;
+  new_ln->prev = ln;
+
+  doc->line_count++;
 }
