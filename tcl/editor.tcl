@@ -1,7 +1,7 @@
-package provide editor 0.1
-
 set MAX_LINES 14
-set VIEWPORT_OFFSET 0
+set MAX_COLS 49
+set VIEWPORT_VERTICAL_OFFSET 0
+set VIEWPORT_HORIZONTAL_OFFSET 0
 
 set BUFFER [concat [list "" "" "" "" "" "" "" "" "" "" "" "" "" ""]]
 set searchpattern ""
@@ -19,11 +19,13 @@ canvas .content.canvas -width 500 -height 300
 pack .content.canvas -side left -fill both -expand true
 
 proc update_line {row} {
-    global BUFFER cursorPosition monoFont
+    global BUFFER cursorPosition monoFont VIEWPORT_HORIZONTAL_OFFSET MAX_COLS
     set line [lindex $BUFFER $row]
     .content.canvas delete "line$row"
 
-    .content.canvas create text 10 [expr {20 * $row}] -anchor nw -font $monoFont -text $line -tags "line$row"
+    set visible_line [string range $line $VIEWPORT_HORIZONTAL_OFFSET [expr {$VIEWPORT_HORIZONTAL_OFFSET + $MAX_COLS - 1}]]
+
+    .content.canvas create text 10 [expr {20 * $row}] -anchor nw -font $monoFont -text $visible_line -tags "line$row"
 
     if {$row == [lindex $cursorPosition 0]} {
         draw_cursor_box
@@ -36,7 +38,7 @@ proc update_display {} {
 
     set row 0
     foreach line $BUFFER {
-        .content.canvas create text 10 [expr {20 * $row}] -anchor nw -font $monoFont -text $line -tags "line$row"
+        update_line $row
         incr row
     }
 
@@ -44,7 +46,7 @@ proc update_display {} {
 }
 
 proc draw_cursor_box {} {
-    global BUFFER monoFont cursorPosition
+    global BUFFER monoFont cursorPosition VIEWPORT_HORIZONTAL_OFFSET
 
     .content.canvas delete selected_box
 
@@ -55,7 +57,7 @@ proc draw_cursor_box {} {
 
     set char_width [font measure $monoFont " "]
 
-    set x1 [expr {10 + $col * $char_width}]
+    set x1 [expr {10 + ($col - $VIEWPORT_HORIZONTAL_OFFSET) * $char_width}]
     set x2 [expr {$x1 + $char_width}]
 
     set y1 [expr {20 * $row}]
@@ -65,14 +67,14 @@ proc draw_cursor_box {} {
 }
 
 proc move_cursor {direction} {
-    global BUFFER cursorPosition previousCursorPosition VIEWPORT_OFFSET MAX_LINES
+    global BUFFER cursorPosition previousCursorPosition VIEWPORT_VERTICAL_OFFSET VIEWPORT_HORIZONTAL_OFFSET MAX_LINES MAX_COLS
     set previousCursorPosition $cursorPosition
 
     switch -- $direction {
         "up" {
-            if {$VIEWPORT_OFFSET > 0 && [lindex $cursorPosition 0] == 0} {
-                set VIEWPORT_OFFSET [expr {$VIEWPORT_OFFSET - 1}]
-                networking::send "viewport 0 $MAX_LINES $VIEWPORT_OFFSET"
+            if {$VIEWPORT_VERTICAL_OFFSET > 0 && [lindex $cursorPosition 0] == 0} {
+                set VIEWPORT_VERTICAL_OFFSET [expr {$VIEWPORT_VERTICAL_OFFSET - 1}]
+                networking::send "viewport 0 $MAX_LINES $VIEWPORT_VERTICAL_OFFSET"
             }
 
             if {[lindex $cursorPosition 0] > 0} {
@@ -83,11 +85,17 @@ proc move_cursor {direction} {
             if {[lindex $cursorPosition 1] > $lineLen} {
                 set cursorPosition [list [lindex $cursorPosition 0] $lineLen]
             }
+
+            if {$lineLen > $MAX_COLS} {
+                set VIEWPORT_HORIZONTAL_OFFSET [expr {$lineLen - $MAX_COLS}]
+            } else {
+                set VIEWPORT_HORIZONTAL_OFFSET 0
+            }
         }
         "down" {
             if {[lindex $cursorPosition 0] == [expr {$MAX_LINES - 1}]} {
-                set VIEWPORT_OFFSET [expr {$VIEWPORT_OFFSET + 1}]
-                networking::send "viewport 0 $MAX_LINES $VIEWPORT_OFFSET"
+                set VIEWPORT_VERTICAL_OFFSET [expr {$VIEWPORT_VERTICAL_OFFSET + 1}]
+                networking::send "viewport 0 $MAX_LINES $VIEWPORT_VERTICAL_OFFSET"
             }
 
             if {[lindex $cursorPosition 0] < [expr {[llength $BUFFER] - 1}]} {
@@ -98,16 +106,36 @@ proc move_cursor {direction} {
             if {[lindex $cursorPosition 1] > $lineLen} {
                 set cursorPosition [list [lindex $cursorPosition 0] $lineLen]
             }
+
+            if {$lineLen > $MAX_COLS} {
+                set VIEWPORT_HORIZONTAL_OFFSET [expr {$lineLen - $MAX_COLS}]
+            } else {
+                set VIEWPORT_HORIZONTAL_OFFSET 0
+            }
         }
         "left" {
             if {[lindex $cursorPosition 1] > 0} {
                 # move left within the current line
                 set cursorPosition [list [lindex $cursorPosition 0] [expr {[lindex $cursorPosition 1] - 1}]]
+
+                if {[lindex $cursorPosition 1] < $VIEWPORT_HORIZONTAL_OFFSET} {
+                    set VIEWPORT_HORIZONTAL_OFFSET [expr {$VIEWPORT_HORIZONTAL_OFFSET - 1}]
+                    
+                    if {$VIEWPORT_HORIZONTAL_OFFSET < 0} {
+                        set VIEWPORT_HORIZONTAL_OFFSET 0
+                    }
+                }
             } elseif {[lindex $cursorPosition 0] > 0} {
                 # move to the end of the previous line
                 set prevLine [expr {[lindex $cursorPosition 0] - 1}]
                 set lineLen [string length [lindex $BUFFER $prevLine]]
                 set cursorPosition [list $prevLine $lineLen]
+
+                if {$lineLen > $MAX_COLS} {
+                    set VIEWPORT_HORIZONTAL_OFFSET [expr {$lineLen - $MAX_COLS}]
+                } else {
+                    set VIEWPORT_HORIZONTAL_OFFSET 0
+                }
             }
         }
         "right" {
@@ -115,9 +143,14 @@ proc move_cursor {direction} {
             if {[lindex $cursorPosition 1] < $lineLen} {
                 # move right within the current line
                 set cursorPosition [list [lindex $cursorPosition 0] [expr {[lindex $cursorPosition 1] + 1}]]
+
+                if {[lindex $cursorPosition 1] >= [expr {$VIEWPORT_HORIZONTAL_OFFSET + $MAX_COLS}]} {
+                    set VIEWPORT_HORIZONTAL_OFFSET [expr {$VIEWPORT_HORIZONTAL_OFFSET + 1}]
+                }
             } elseif {[lindex $cursorPosition 0] < [expr {[llength $BUFFER] - 1}]} {
                 # move to the start of the next line
                 set cursorPosition [list [expr {[lindex $cursorPosition 0] + 1}] 0]
+                set VIEWPORT_HORIZONTAL_OFFSET 0
             }
         }
         default {
@@ -125,9 +158,8 @@ proc move_cursor {direction} {
         }
     }
     
-    # update only changes
-    update_line [lindex $previousCursorPosition 0]
-    update_line [lindex $cursorPosition 0]
+    # this used to update only changes now all of the lines, might change it back
+    update_display
 }
 
 proc jump_word {direction} {

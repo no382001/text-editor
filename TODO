@@ -9,6 +9,7 @@
 - [fix] add null termination in buffer-pool, could save a lot of converting cycles
 - [fix] del should delete the prev char not the curr
 
+- [tcl] clean up code, package them
 
 c -> tcl:
   el <line> <col> // empty line
