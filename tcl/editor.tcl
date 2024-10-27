@@ -130,12 +130,95 @@ proc move_cursor {direction} {
     update_line [lindex $cursorPosition 0]
 }
 
+proc jump_word {direction} {
+    global BUFFER cursorPosition
+
+    if {$direction eq "left"} {
+        set move_cmd "left"
+        set adjust_needed true
+    } elseif {$direction eq "right"} {
+        set move_cmd "right"
+        set adjust_needed false
+    } else {
+        puts "invalid direction for jump_word: $direction"
+        return
+    }
+
+    if {[initial_move $move_cmd]} {
+        return
+    }
+
+    skip_whitespace $move_cmd
+
+    move_across_word $move_cmd
+
+    if {$adjust_needed} {
+        adjust_cursor_to_word_start
+    }
+}
+
+proc initial_move {move_cmd} {
+    global cursorPosition
+
+    set prevPos $cursorPosition
+    move_cursor $move_cmd
+    return [expr {$cursorPosition eq $prevPos}]
+}
+
+proc skip_whitespace {move_cmd} {
+    global BUFFER cursorPosition
+
+    update_position_vars
+    while {[within_bounds $move_cmd] && [string is space [string index $::line $::col]]} {
+        if {[initial_move $move_cmd]} { return }
+
+        update_position_vars
+    }
+}
+
+proc move_across_word {move_cmd} {
+    global BUFFER cursorPosition
+
+    update_position_vars
+    while {[within_bounds $move_cmd] && ![string is space [string index $::line $::col]]} {
+        if {[initial_move $move_cmd]} { break }
+
+        update_position_vars
+    }
+}
+
+proc update_position_vars {} {
+    global BUFFER cursorPosition line col row lineLen
+    set row [lindex $cursorPosition 0]
+    set col [lindex $cursorPosition 1]
+    set line [lindex $BUFFER $row]
+    set lineLen [string length $line]
+}
+
+proc within_bounds {move_cmd} {
+    if {$move_cmd eq "left"} {
+        return [expr {$::col >= 0}]
+    } else {
+        return [expr {$::col < $::lineLen}]
+    }
+}
+
+proc adjust_cursor_to_word_start {} {
+    global line col
+    if {$col < 0 || [string is space [string index $line $col]]} {
+        move_cursor right
+    }
+}
 
 bind . <Key-Up> {move_cursor up}
 bind . <Key-Down> {move_cursor down}
 bind . <Key-Left> {move_cursor left}
 bind . <Key-Right> {move_cursor right}
+bind . <Control-Left> {jump_word left}
+bind . <Control-Right> {jump_word right}
+
 bind . <KeyPress> {handle_key_press %K}
+
 
 proc handle_key_press {k} {
     global cursorPosition
