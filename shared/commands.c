@@ -5,12 +5,13 @@
 #include <stdatomic.h>
 
 #include <ctype.h>
+#include <math.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/evp.h>
 #include <time.h>
 
-key_translation_t key_translation_table[] = {
+static key_translation_t key_translation_table[] = {
     {"space", " "},       {"BackSpace", "BackSpace"},
     {"Tab", "\t"},        {"Return", "Return"},
     {"F5", "F5"},
@@ -33,7 +34,7 @@ key_translation_t key_translation_table[] = {
     {"grave", "`"},       {"asciitilde", "~"},
     {NULL, NULL}};
 
-const char *translate_key(const char *key) {
+static const char *translate_key(const char *key) {
   for (int i = 0; key_translation_table[i].name != NULL; i++) {
     if (strcmp(key, key_translation_table[i].name) == 0) {
       return key_translation_table[i].repl;
@@ -41,8 +42,9 @@ const char *translate_key(const char *key) {
   }
   return "";
 }
-#include <math.h>
-int base64_encode(const char *message, char *buffer, size_t buffer_size) {
+
+static int base64_encode(const char *message, char *buffer,
+                         size_t buffer_size) {
   BIO *bio, *b64;
   FILE *stream;
 
@@ -81,7 +83,7 @@ extern Document *g_d;
 
 // - update viewport
 //  - viewport <start_line> <end_line>
-void viewport(arg_t *args, int size) {
+static void viewport(arg_t *args, int size) {
 
   // maybe a bit confusing
   int from = atoi(args[0].data);
@@ -105,10 +107,44 @@ void viewport(arg_t *args, int size) {
   // send_to_client("pos %d %d", 0, 0);
 }
 
+static void killhost(arg_t *args, int size) { raise(SIGTERM); }
+
+// save
+// save-as <name>
+static void save(arg_t *args, int size) {
+  char *filename = args[0].data;
+  if (strlen(filename) == 0) {
+    filename = g_d->name;
+  }
+
+  FILE *file = fopen(filename, "w");
+  if (!file) {
+    perror("failed to open file for writing");
+    return;
+  }
+
+  LineNode *line = g_d->first_line;
+  while (line) {
+    Node *node = line->head;
+    while (node) {
+      fwrite(node->chunk, sizeof(char), node->size, file);
+      node = node->next;
+    }
+    line = line->next;
+  }
+
+  fclose(file);
+  log_message(INFO, "command save: saved to %s", filename);
+  send_to_client("cmdack");
+}
+
 static command_map_t cmd_map[] = {
     {"key", key_pressed, 3},
     {"viewport", viewport, 2}, // this is fundamentally wrong
     {"viewport", viewport, 3},
+    {"save", save, 0},
+    {"save-as", save, 1},
+    {"kill", killhost, 0},
     {NULL, NULL}};
 
 // - insert/delete into/from document

@@ -4,7 +4,7 @@
 
 - [rework] ui, enclose it into a resizable box, text size?
 - [feat] save/load/open/close file
-- [feat] top-level command layer <- that can just basically send tcp commands? or should this be in the target lang?
+
 
 - [fix] add null termination in buffer-pool, could save a lot of converting cycles
 - [fix] del should delete the prev char not the curr
@@ -22,3 +22,6 @@ tcl -> c -> tcl:
     -> n1..n2 -> ch <line> <col> <b64line> 
   key <line> <col> <button>
     -> ch <line> <col> <b64line>
+
+- first line delete idx underflow asan crash
+- last line move cmd over index asan crash

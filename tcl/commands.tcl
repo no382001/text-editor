@@ -1,14 +1,17 @@
 package require base64
 
+set command_tab_open 0
+
 namespace eval commands {
      proc eval_command {string} {
         global log
         global cursorPosition
+        global commandStatusIndicator
 
         set parts [split $string " "]
         set command [lindex $parts 0]
     
-        ${log}::notice "$string"
+        ${log}::notice "command recieved: '$string' "
 
         switch -- $command {
             "ch" {
@@ -32,6 +35,16 @@ namespace eval commands {
                 set dir [lindex $parts 1]
                 move_cursor $dir
             }
+            "cmdack" {
+                set commandStatusIndicator "\[x\]"
+                update_display
+                return
+            }
+            "cmdnack" {
+                set commandStatusIndicator "\[-\]"
+                update_display
+                return
+            }
             default {
                 puts "unknown command: $command"
             }
@@ -39,4 +52,16 @@ namespace eval commands {
 
         update_line [lindex $cursorPosition 0]
     }
+
+    proc toggle_command_tab {} {   
+        global command_tab_open
+        
+        if {$command_tab_open == 0} {
+            set command_tab_open 1
+        } else {
+            set command_tab_open 0
+        }
+
+        update_display
+    }   
 }

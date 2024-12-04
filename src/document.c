@@ -153,6 +153,7 @@ void document_load_file(Document *d, char *filename) {
     perror("Failed to open file");
     return;
   }
+  d->name = filename;
 
   char *line = NULL;
   size_t len = 0;

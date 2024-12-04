@@ -183,6 +183,8 @@ static void parse_and_ex_command(network_cfg_t *n) {
   char head[50] = {0};
   if (sscanf(n->buffer, "%s", head) != 1) {
     log_message(ERROR, "invalid command format: ->%s<-", n->buffer);
+    send_to_client("cmdnack");
+    return;
   }
   char *ptr = n->buffer;
   sscanf(ptr, "%s", head); // skip command
@@ -204,7 +206,8 @@ static void parse_and_ex_command(network_cfg_t *n) {
   if (f) {
     f(args, i);
   } else {
-    log_message(ERROR, "invalid command: ->%s<-", head);
+    log_message(ERROR, "invalid command: `%s`", head);
+    send_to_client("cmdnack");
   }
 }
 
@@ -220,7 +223,7 @@ static void handle_data(network_cfg_t *n) {
           (n->buffer[len - 1] == '\n' || n->buffer[len - 1] == '\r')) {
         n->buffer[len - 1] = '\0';
       }
-      log_message(DEBUG, "message from tcl: ->%s<-", n->buffer);
+      log_message(DEBUG, "message from tcl: `%s`", n->buffer);
       parse_and_ex_command(n);
 
     } else if (valread == 0) {

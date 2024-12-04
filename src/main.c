@@ -22,7 +22,7 @@ int main() {
   document_init(&d);
   g_d = &d;
   // print_path();
-  document_load_file(&d, "src/document.c");
+  document_load_file(&d, "TODO");
   document_build_index(&d, DOCUMENT_INDEX_GAP);
 
   networking_thread();

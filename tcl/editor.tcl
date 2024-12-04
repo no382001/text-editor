@@ -32,8 +32,36 @@ proc update_line {row} {
     }
 }
 
+set command_tab_text ""
+set commandStatusIndicator "\[ \]"
+
+proc draw_command_tab {} {
+    global monoFont MAX_COLS command_tab_text commandStatusIndicator
+
+    set canvasWidth [winfo width .content.canvas]
+    set canvasHeight [winfo height .content.canvas]
+
+    set lineHeight 20
+    set rectY1 [expr {$canvasHeight - $lineHeight}]
+    set rectY2 $canvasHeight
+
+    .content.canvas delete command_tab
+    .content.canvas delete command_tab_t
+
+    .content.canvas create rectangle 0 $rectY1 $canvasWidth $rectY2 -fill lightgray -outline black -tags command_tab
+
+    set charWidth [font measure $monoFont " "]
+    set textX 10
+    set textY [expr {$rectY1 + ($lineHeight / 4)}]
+    
+    set displayText "$commandStatusIndicator > $command_tab_text"
+
+    .content.canvas create text $textX $textY -anchor nw -font $monoFont -text $displayText -tags command_tab_t
+}
+
+
 proc update_display {} {
-    global BUFFER monoFont
+    global BUFFER monoFont command_tab_open
     .content.canvas delete all
 
     set row 0
@@ -42,7 +70,13 @@ proc update_display {} {
         incr row
     }
 
-    draw_cursor_box
+    if {$command_tab_open == 1} {
+        # bleh
+        .content.canvas delete selected_box
+        draw_command_tab
+    } else {
+        draw_cursor_box
+    }
 }
 
 proc draw_cursor_box {} {
@@ -242,21 +276,103 @@ proc adjust_cursor_to_word_start {} {
     }
 }
 
-bind . <Key-Up> {move_cursor up}
-bind . <Key-Down> {move_cursor down}
-bind . <Key-Left> {move_cursor left}
-bind . <Key-Right> {move_cursor right}
-bind . <Control-Left> {jump_word left}
-bind . <Control-Right> {jump_word right}
+array set key_translation_table {
+    space " " 
+    exclam "!" 
+    at "@" 
+    numbersign "#" 
+    dollar "$" 
+    percent "%" 
+    asciicircum "^" 
+    ampersand "&" 
+    asterisk "*" 
+    parenleft "(" 
+    parenright ")" 
+    minus "-" 
+    underscore "_" 
+    plus "+" 
+    equal "=" 
+    bracketleft "[" 
+    bracketright "]" 
+    braceleft "{" 
+    braceright "}" 
+    semicolon ";" 
+    colon ":" 
+    quote "'" 
+    doublequote "\"" 
+    backslash "\\" 
+    slash "/" 
+    comma "," 
+    period "." 
+    less "<" 
+    greater ">" 
+    question "?" 
+    bar "|" 
+    grave "`" 
+    asciitilde "~"
+}
 
-bind . <KeyPress> {handle_key_press %K}
+proc command_tab_handle_input {key} {
+    global command_tab_text command_tab_open key_translation_table commandStatusIndicator
+    if { $key eq "BackSpace" } {
+        if {[string length $command_tab_text] > 0} {
+            set command_tab_text [string range $command_tab_text 0 end-1]
+        }
+    } elseif {$key eq "Return"} {
+        networking::send $command_tab_text
+        set commandStatusIndicator "\[?\]"
+    } elseif {[info exists key_translation_table($key)]} {
+        append command_tab_text $key_translation_table($key)
+    } elseif {[string is alnum $key]} {
+        append command_tab_text $key
+    } else {
+        #ignore everything else
+    }
 
+    update_display
+}
+
+proc dispatch_user_input {command} {
+    global command_tab_open
+    if { $command_tab_open == 1 } {
+        # command_tab_handle_input $command
+    } else {
+        eval $command
+    }
+}
+
+bind . <Key-Up>         { dispatch_user_input "move_cursor up"   }
+bind . <Key-Down>       { dispatch_user_input "move_cursor down" }
+bind . <Key-Left>       { dispatch_user_input "move_cursor left" }
+bind . <Key-Right>      { dispatch_user_input "move_cursor right"}
+bind . <Control-Left>   { dispatch_user_input "jump_word left"   }
+bind . <Control-Right>  { dispatch_user_input "jump_word right"  }
+
+bind . <KeyPress>       { handle_key_press %K                    }
+
+set queue {}
+set times {}
 
 proc handle_key_press {k} {
-    global cursorPosition
-    set col [lindex $cursorPosition 0]
-    set lin [lindex $cursorPosition 1]
-    networking::send "key $col $lin $k"
+    global cursorPosition queue times command_tab_open
+    
+    if {$queue eq "Control_L" && $k eq "c"} {
+        if {[expr [clock milliseconds] - $times] <= 500} {
+            commands::toggle_command_tab
+            set queue {}; set times {}
+            return
+        }
+    }
+    set queue $k
+    set times [clock milliseconds]
+
+    if { $command_tab_open == 1 } {
+        command_tab_handle_input $k
+    } else {    
+        set lin [lindex $cursorPosition 1]
+        set col [lindex $cursorPosition 0]
+        networking::send "key $col $lin $k"
+    }
 }
 
 proc replace_line {lineNumber newContent} {

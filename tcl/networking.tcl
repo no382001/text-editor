@@ -48,7 +48,7 @@ namespace eval networking {
         variable sock
         global log
         if {$sock ne ""} {
-            puts $string
+            ${log}::notice "sending '$string' "
             puts -nonewline $sock $string
             flush $sock
         } else {
