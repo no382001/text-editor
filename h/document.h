@@ -15,7 +15,7 @@ typedef struct Document {
   LineNode *last_line;
   size_t line_count;
   LineIndex line_index;
-  char* name;
+  char *name;
 } Document;
 
 void document_init(Document *d);

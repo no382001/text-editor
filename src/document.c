@@ -97,6 +97,11 @@ LineNode *document_find_line(Document *d, int i) {
 
   LineIndex *li = &d->line_index;
   size_t idx = i / li->line_gap;
+  
+  if (idx >= li->index_size || idx < 0) {
+    return NULL;
+  }
+
   LineNode *ln = li->index[idx];
   size_t start_line = idx * li->line_gap;
 
@@ -186,9 +191,19 @@ void document_delete_line(Document *doc, int line) {
 }
 
 void document_delete_char(Document *doc, int line, int col) {
-  if (col == 0 && line > 0) {
+  if (col == 0 && line == 0) {
+    if (doc->line_count > 1) {
+      //document_delete_line(doc, line); // what? no
+    } else {
+      return;
+    }
+  } else if (col == 0 && line > 0) {
     LineNode *current_line = document_find_line(doc, line);
     LineNode *previous_line = document_find_line(doc, line - 1);
+
+    if (!current_line || !previous_line){
+      return;
+    }
 
     Node *head = current_line->head;
     while (head) {
@@ -198,7 +213,7 @@ void document_delete_char(Document *doc, int line, int col) {
       head = head->next;
     }
 
-    document_delete_line(doc, line);
+    document_delete_line(doc, line); // this also sometimes deletes whole lines when it shouldnt
   } else {
     line_node_delete(document_find_line(doc, line), col, 1);
   }

@@ -10,17 +10,23 @@ static network_cfg_t *global_network_cfg;
 extern struct lfq_ctx *g_lfq_ctx;
 
 #define STACK_SIZE 1024
-
 void signal_handler(int signum) {
+  char **backtrace_syms = {0};
+  int backtrace_size = {0};
+
   if (signum == SIGINT || signum == SIGTERM || signum == SIGSEGV) {
     if (signum == SIGSEGV) {
       log_message(ERROR, "received segmentation fault, shutting down...");
+      void *buffer[30];
+      backtrace_size = backtrace(buffer, 30);
+      backtrace_syms = backtrace_symbols(buffer, backtrace_size);
     } else {
       log_message(INFO, "received termination signal, shutting down...");
     }
 
     log_message(INFO, "sending termsig to tcl...");
     send_to_client("term");
+    usleep(500);
 
     struct linger sl;
     sl.l_onoff = 1;  // enable linger option
@@ -50,6 +56,59 @@ void signal_handler(int signum) {
       log_message(INFO,
                   "cant close client_fd, but it should have closed already");
     }
+
+    if (signum == SIGSEGV) {
+      if (!backtrace_syms) {
+        log_message(ERROR, "failed to capture stack trace");
+      } else {
+        fprintf(stderr, "resolving stack trace:\n");
+
+        char binary_path[256];
+
+        ssize_t len =
+            readlink("/proc/self/exe", binary_path, sizeof(binary_path) - 1);
+        if (len == -1) {
+          perror("readlink failed");
+          strncpy(binary_path, "./a.out", sizeof(binary_path));
+        } else {
+          binary_path[len] = '\0';
+        }
+
+        for (int i = 0; i < backtrace_size; i++) {
+          char *start = strstr(backtrace_syms[i], "+");
+          char *end = strstr(backtrace_syms[i], ")");
+          if (start && end && start < end) {
+            size_t len = end - start - 1;
+            char offset[len + 1];
+            strncpy(offset, start + 1, len);
+            offset[len] = '\0';
+
+            char command[256*2];
+            snprintf(command, sizeof(command), "addr2line -e %s %s",
+                     binary_path,offset);
+
+            FILE *fp = popen(command, "r");
+            if (fp == NULL) {
+              log_message(ERROR, "popen failed for addr2line");
+              continue;
+            }
+
+            char result[256];
+            if (fgets(result, sizeof(result), fp) != NULL) {
+              fprintf(stderr, "  %s \t\t%s", backtrace_syms[i], result);
+            } else {
+              fprintf(stderr, "%s: could not resolve\n", backtrace_syms[i]);
+            }
+
+            pclose(fp);
+          } else {
+            fprintf(stderr, "%s: malformed symbol entry\n", backtrace_syms[i]);
+          }
+        }
+        free(backtrace_syms);
+      }
+    }
+    log_message(INFO, "exiting...");
     exit(0);
   }
 }

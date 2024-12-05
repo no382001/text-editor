@@ -75,7 +75,9 @@ size_t total_size(Node *head) {
 
 void modify_node(Node **head, size_t index, const char *str, size_t len,
                  ModificationType mod_type) {
-
+  if (!head){
+    return;
+  }
   if (index > total_size(*head)) {
     log_message(DEBUG, "overindexed! returning");
     return;

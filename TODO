@@ -5,7 +5,6 @@
 - [rework] ui, enclose it into a resizable box, text size?
 - [feat] save/load/open/close file
 
-
 - [fix] add null termination in buffer-pool, could save a lot of converting cycles
 - [fix] del should delete the prev char not the curr
 
@@ -22,6 +21,11 @@ tcl -> c -> tcl:
     -> n1..n2 -> ch <line> <col> <b64line> 
   key <line> <col> <button>
     -> ch <line> <col> <b64line>
+  
+  save -> cmdack | cmdnack
+  save-as <fn> -> cmdack | cmdnack
+  open <fn> -> cmdack | cmdnack
+  close <fn> -> cmdack | cmdnack
 
-- first line delete idx underflow asan crash
-- last line move cmd over index asan crash
+- the tcl cursor should stay on existing lines
+- no segfaults, but some lines disappear when deleting

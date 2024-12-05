@@ -82,7 +82,7 @@ extern Document *g_d;
 // modifications
 
 // - update viewport
-//  - viewport <start_line> <end_line>
+//  - viewport <start_line> <end_line> <offset>
 static void viewport(arg_t *args, int size) {
 
   // maybe a bit confusing
@@ -94,10 +94,15 @@ static void viewport(arg_t *args, int size) {
 
     LineNode *ln = document_find_line(g_d, i + offset);
 
+    if (!ln){ // offset can go over the actual beound
+      //send_to_client("el %d", i);
+      return;
+    }
+
     char buf[MSG_BUFFER_SIZE] = {0};
     print_node_to_buffer(ln->head, buf, MSG_BUFFER_SIZE);
     if (strlen(buf) == 0) {
-      send_to_client("el %d", i);
+      send_to_client("el %d", i); // empty line
     } else {
       char encode[MSG_BUFFER_SIZE] = {0};
       base64_encode(buf, encode, MSG_BUFFER_SIZE);
@@ -166,6 +171,9 @@ void key_pressed(arg_t *args, int size) {
   }
 
   LineNode *ln = document_find_line(g_d, line);
+  if (!ln){
+    return;
+  }
 
   if (!strcmp(key, "F5")) {
     viewport((arg_t[]){{"0"}, {EDITOR_LINES}, {""}}, 2);
@@ -198,7 +206,7 @@ void key_pressed(arg_t *args, int size) {
   // so the command is redundant
 
   if (strlen(buf) == 0) {
-    send_to_client("el %d", line);
+    send_to_client("el %d", line); // empty line
   } else {
     char encode[MSG_BUFFER_SIZE] = {0};
     base64_encode(buf, encode, MSG_BUFFER_SIZE);
