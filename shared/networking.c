@@ -9,6 +9,9 @@
 static network_cfg_t *global_network_cfg;
 extern struct lfq_ctx *g_lfq_ctx;
 
+bool command_logging = true;
+FILE *command_log_path = 0;
+
 #define STACK_SIZE 1024
 void signal_handler(int signum) {
   char **backtrace_syms = {0};
@@ -57,6 +60,11 @@ void signal_handler(int signum) {
                   "cant close client_fd, but it should have closed already");
     }
 
+    if (command_log_path) {
+      fclose(command_log_path);
+      log_message(INFO, "closing logfile...");
+    }
+
     if (signum == SIGSEGV) {
       if (!backtrace_syms) {
         log_message(ERROR, "failed to capture stack trace");
@@ -83,9 +91,9 @@ void signal_handler(int signum) {
             strncpy(offset, start + 1, len);
             offset[len] = '\0';
 
-            char command[256*2];
+            char command[256 * 2];
             snprintf(command, sizeof(command), "addr2line -e %s %s",
-                     binary_path,offset);
+                     binary_path, offset);
 
             FILE *fp = popen(command, "r");
             if (fp == NULL) {
@@ -238,6 +246,13 @@ static void accept_data(network_cfg_t *n) {
   }
 }
 
+static void log_command(char *command) {
+  if (command_logging && command_log_path) {
+    fprintf(command_log_path, "%s\n", command);
+    fflush(command_log_path);
+  }
+}
+
 static void parse_and_ex_command(network_cfg_t *n) {
   char head[50] = {0};
   if (sscanf(n->buffer, "%s", head) != 1) {
@@ -264,6 +279,8 @@ static void parse_and_ex_command(network_cfg_t *n) {
   command_fn f = find_function_by_command(head, i);
   if (f) {
     f(args, i);
+    // only log valid commands tho, in terms of repro the others dont matter
+    log_command(n->buffer);
   } else {
     log_message(ERROR, "invalid command: `%s`", head);
     send_to_client("cmdnack");

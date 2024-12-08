@@ -82,6 +82,10 @@ void document_build_index(Document *d, size_t gap) {
   d->line_index.index_size = idx;
 
   log_message(DEBUG, "index built with %zu entries!", d->line_index.index_size);
+
+  //printf("\033[H\033[J");
+  //fflush(stdout);
+  //document_print_structure(d);
 }
 
 LineNode *document_find_line(Document *d, int i) {
@@ -97,7 +101,7 @@ LineNode *document_find_line(Document *d, int i) {
 
   LineIndex *li = &d->line_index;
   size_t idx = i / li->line_gap;
-  
+
   if (idx >= li->index_size || idx < 0) {
     return NULL;
   }
@@ -165,8 +169,8 @@ void document_load_file(Document *d, char *filename) {
   size_t read;
 
   while ((read = getline(&line, &len, file)) != -1) {
-    if (line[len - 1] == '\n') {
-      line[len - 1] = '\0';
+    if (line[read - 1] == '\n') {
+      line[read - 1] = '\0';
     }
     document_append(d, line);
     document_newline(d);
@@ -192,20 +196,17 @@ void document_delete_line(Document *doc, int line) {
 
 void document_delete_char(Document *doc, int line, int col) {
   if (col == 0 && line == 0) {
-    if (doc->line_count > 1) {
-      //document_delete_line(doc, line); // what? no
-    } else {
-      return;
-    }
+    return;
   } else if (col == 0 && line > 0) {
     LineNode *current_line = document_find_line(doc, line);
     LineNode *previous_line = document_find_line(doc, line - 1);
 
-    if (!current_line || !previous_line){
+    if (!current_line || !previous_line) {
       return;
     }
 
     Node *head = current_line->head;
+
     while (head) {
       char buff[CHUNK_SIZE];
       snprintf(buff, CHUNK_SIZE, "%.*s", (int)head->size, head->chunk);
@@ -213,7 +214,9 @@ void document_delete_char(Document *doc, int line, int col) {
       head = head->next;
     }
 
-    document_delete_line(doc, line); // this also sometimes deletes whole lines when it shouldnt
+    // at this point `current` line should have been appended to the `prev` one
+    // so thats why you delete
+    document_delete_line(doc, line);
   } else {
     line_node_delete(document_find_line(doc, line), col, 1);
   }

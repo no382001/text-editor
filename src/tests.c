@@ -355,7 +355,9 @@ void test_document_newline(void) {
   document_append(&doc, "Hello, World2!");
   document_newline(&doc);
   document_append(&doc, "Hello, World3!");
-  document_delete_char(&doc, 1, 0); // delete the first line
+  // delete the `newline` (the 0th char) from the 2nd line and merge it with the
+  // prev line
+  document_delete_char(&doc, 1, 0);
   TEST_ASSERT_EQUAL(2, doc.line_count);
 
   // document_print_structure(&doc);
@@ -473,45 +475,64 @@ void setUp(void) { buffer_pool_init(POOL_SIZE); }
 
 void tearDown(void) { buffer_pool_deinit(); }
 
-int main(void) {
+typedef struct {
+  const char *name;
+  void (*test_func)(void);
+} test_entry_t;
+
+#define TEST_ENTRY(name)                                                       \
+  { #name, name }
+
+test_entry_t test_table[] = {
+    TEST_ENTRY(test_buffer_pool_init),
+    TEST_ENTRY(test_buffer_pool_alloc),
+    TEST_ENTRY(test_buffer_pool_free),
+    TEST_ENTRY(test_buffer_pool_realloc),
+    TEST_ENTRY(test_create_node),
+    TEST_ENTRY(test_merge_nodes),
+    TEST_ENTRY(test_insert_into_node),
+    TEST_ENTRY(test_delete_from_node),
+    TEST_ENTRY(test_delete_from_node_wrong_index),
+    TEST_ENTRY(test_delete_and_merge),
+    TEST_ENTRY(test_complex_modifications),
+    TEST_ENTRY(test_new_line),
+    TEST_ENTRY(test_line_node_append),
+    TEST_ENTRY(test_line_node_delete),
+    TEST_ENTRY(test_line_node_replace),
+    TEST_ENTRY(test_line_node_insert),
+    TEST_ENTRY(test_line_node_delete_and_merge),
+    TEST_ENTRY(test_document_init),
+    TEST_ENTRY(test_document_append),
+    TEST_ENTRY(test_document_newline),
+    TEST_ENTRY(test_document_build_index),
+    TEST_ENTRY(test_document_find_line),
+    TEST_ENTRY(test_document_benchmark),
+};
+
+void run_all_tests(void) {
+  for (size_t i = 0; i < sizeof(test_table) / sizeof(test_entry_t); i++) {
+    UnityDefaultTestRun(test_table[i].test_func, test_table[i].name, 512);
+  }
+}
+
+int main(int argc, char **argv) {
   set_log_level(INFO);
   UNITY_BEGIN();
 
-  printf("---- buffer_pool\n");
-  RUN_TEST(test_buffer_pool_init);
-  RUN_TEST(test_buffer_pool_alloc);
-  RUN_TEST(test_buffer_pool_free);
-  RUN_TEST(test_buffer_pool_realloc);
-  printf("---- node\n");
-  RUN_TEST(test_create_node);
-  // overflow in unity asan, we dont really care as long as split is triggered
-  // RUN_TEST(test_split_node);
-  RUN_TEST(test_merge_nodes);
-  RUN_TEST(test_insert_into_node);
-  RUN_TEST(test_delete_from_node);
-  RUN_TEST(test_delete_from_node_wrong_index);
-  RUN_TEST(test_delete_and_merge);
-  RUN_TEST(test_complex_modifications);
+  if (argc > 1) {
+    const char *test_name = argv[1];
+    for (size_t i = 0; i < sizeof(test_table) / sizeof(test_entry_t); i++) {
+      if (strcmp(test_table[i].name, test_name) == 0) {
+        RUN_TEST(test_table[i].test_func);
+        return UNITY_END();
+      }
+    }
+    printf("test '%s' not found.\n", test_name);
+    return UNITY_END();
+  }
 
-  printf("---- line_node\n");
-  RUN_TEST(test_new_line);
-  RUN_TEST(test_line_node_append);
-  RUN_TEST(test_line_node_delete);
-  RUN_TEST(test_line_node_replace);
-  RUN_TEST(test_line_node_insert);
-  RUN_TEST(test_line_node_delete_and_merge);
-
-  printf("---- document\n");
-  RUN_TEST(test_document_init);
-  RUN_TEST(test_document_append);
-  RUN_TEST(test_document_newline);
-  RUN_TEST(test_document_build_index);
-  RUN_TEST(test_document_find_line);
-
-  printf("---- benchmark\n");
-  RUN_TEST(test_document_benchmark);
-  /*
-   */
+  printf("running all tests...\n");
+  run_all_tests();
 
   return UNITY_END();
 }

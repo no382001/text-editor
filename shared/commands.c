@@ -94,8 +94,8 @@ static void viewport(arg_t *args, int size) {
 
     LineNode *ln = document_find_line(g_d, i + offset);
 
-    if (!ln){ // offset can go over the actual beound
-      //send_to_client("el %d", i);
+    if (!ln) { // offset can go over the actual beound
+      // send_to_client("el %d", i);
       return;
     }
 
@@ -143,13 +143,48 @@ static void save(arg_t *args, int size) {
   send_to_client("cmdack");
 }
 
+extern bool command_logging;
+extern FILE *command_log_path;
+
+static void set_log(arg_t *args, int size) {
+  char *option = args[0].data;
+  if (!strcmp(option, "on")) {
+    char filename[256];
+    time_t now = time(NULL);
+    struct tm *local_time = localtime(&now);
+
+    snprintf(filename, sizeof(filename),
+             "logs/commands_%02d%02d_%02d%02d%02d.log", local_time->tm_mon + 1,
+             local_time->tm_mday, local_time->tm_hour, local_time->tm_min,
+             local_time->tm_sec);
+
+    command_log_path = fopen(filename, "a");
+    if (!command_log_path) {
+      log_message(ERROR, "failed to open log file!");
+      send_to_client("cmdnack");
+      return;
+    }
+    command_logging = true;
+  } else if (!strcmp(option, "off")) {
+    fclose(command_log_path);
+    command_logging = false;
+  } else {
+    send_to_client("cmdnack");
+    return;
+  }
+
+  send_to_client("cmdack");
+}
+
 static command_map_t cmd_map[] = {
     {"key", key_pressed, 3},
-    {"viewport", viewport, 2}, // this is fundamentally wrong
+    {"viewport", viewport, 2}, // this is
+                               // fundamentally wrong
     {"viewport", viewport, 3},
     {"save", save, 0},
     {"save-as", save, 1},
     {"kill", killhost, 0},
+    {"log", set_log, 1},
     {NULL, NULL}};
 
 // - insert/delete into/from document
@@ -171,7 +206,7 @@ void key_pressed(arg_t *args, int size) {
   }
 
   LineNode *ln = document_find_line(g_d, line);
-  if (!ln){
+  if (!ln) {
     return;
   }
 
