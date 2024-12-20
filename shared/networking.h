@@ -22,6 +22,7 @@ typedef struct network_cfg {
   fd_set readfds;
   int max_sd;
 
+  char* startup_cmd;
 } network_cfg_t;
 
 void networking_thread();

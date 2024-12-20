@@ -124,7 +124,8 @@ static void save(arg_t *args, int size) {
 
   FILE *file = fopen(filename, "w");
   if (!file) {
-    perror("failed to open file for writing");
+    perror("command save: failed to open file for writing");
+    send_to_client("cmdnack");
     return;
   }
 
@@ -141,6 +142,27 @@ static void save(arg_t *args, int size) {
   fclose(file);
   log_message(INFO, "command save: saved to %s", filename);
   send_to_client("cmdack");
+}
+
+// open <name>
+static void d_open(arg_t *args, int size) {
+  char *filename = args[0].data;
+
+  document_load_file(g_d, filename);
+  document_build_index(g_d, DOCUMENT_INDEX_GAP);
+
+  log_message(INFO, "command open: file loaded %s", filename);
+  send_to_client("cmdack");
+  send_to_client("update");
+}
+
+// close
+static void d_close(arg_t *args, int size) {
+  document_deinit(g_d);
+
+  log_message(INFO, "command close: current file closed");
+  send_to_client("cmdack");
+  send_to_client("update");
 }
 
 extern bool command_logging;
@@ -183,6 +205,8 @@ static command_map_t cmd_map[] = {
     {"viewport", viewport, 3},
     {"save", save, 0},
     {"save-as", save, 1},
+    {"open", d_open, 1},
+    {"close", d_close, 0},
     {"kill", killhost, 0},
     {"log", set_log, 1},
     {NULL, NULL}};
@@ -251,6 +275,8 @@ void key_pressed(arg_t *args, int size) {
   if (strcmp(key, "BackSpace")) {
     send_to_client("move right");
   }
+  
+  send_to_client("update");
 }
 
 command_fn find_function_by_command(const char *command, int arity) {

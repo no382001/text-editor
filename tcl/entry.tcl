@@ -8,5 +8,3 @@ source tcl/editor.tcl
 networking::connect
 update_display
 update_viewport
-
-networking::send "log on"

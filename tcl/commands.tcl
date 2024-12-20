@@ -45,6 +45,17 @@ namespace eval commands {
                 update_display
                 return
             }
+            "echo" {
+                set wo_echo [string range $string 5 end]
+                set commands [split $wo_echo ";"]
+                
+                foreach cmd $commands {
+                    networking::send $cmd
+                }
+            }
+            "update" {
+                update_viewport
+            }
             default {
                 puts "unknown command: $command"
             }

@@ -5,15 +5,14 @@
 
 - [feat] history
 - [feat] viewport horizontal offset
-- [feat] save/load/open/close file
 
-- [fix] add null termination in buffer-pool, could save a lot of converting cycles
 - [fix] del should delete the prev char not the curr
 
 c -> tcl:
   el <line> <col> // empty line
   ch <line> <col> <b64line>
   move <up/down/left/right>
+  echo <tcl -> c command>s delimited by `;`, or just 1 without `;`  
 
 tcl -> c -> tcl:
   viewport <n1> <n2>
@@ -27,6 +26,25 @@ tcl -> c -> tcl:
   open <fn> -> cmdack | cmdnack
   close <fn> -> cmdack | cmdnack
 
-- the tcl cursor should stay on existing lines
+[ ] the tcl cursor should stay on existing lines
+  - problem with $BUFFER, when there is nothing to display, move cursor shifts the lines out of the buffer, but there is still a line that can be navigated, bc its a fixed buffer, only appended into
+
 - no segfaults, but some lines disappear when deleting
-- sometimes when i delete from the file, the line disappears, but on viewport update ir reappears?
+  - this should be the same bug as below
+[ ] sometimes when i delete from the file, the line disappears, but on viewport update ir reappears?
+  - request update on, see if this fixes it
+
+
+- viewport offset fucks up when somethingis modified, but only when the modification is offscreen (line num bigger than max lines we are able to show)
+- sometimes lines get stuck
+
+[x] implement open and close
+[x] `echo` command, no current use tho
+
+[ ] startup command could be more than 1 line
+
+[ ] - the vertical offset is not calculated into the key send? or something like that
+  - to replicate, scroll down, go back a little, modify
+[ ] - weird newline leak, replated to above 
+
+[ ] - the cursor is totally out of sync, suggesting entire gui rewrite

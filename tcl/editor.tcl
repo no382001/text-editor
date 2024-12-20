@@ -104,6 +104,8 @@ proc move_cursor {direction} {
     global BUFFER cursorPosition previousCursorPosition VIEWPORT_VERTICAL_OFFSET VIEWPORT_HORIZONTAL_OFFSET MAX_LINES MAX_COLS
     set previousCursorPosition $cursorPosition
 
+    puts "move $direction -> $cursorPosition"
+
     switch -- $direction {
         "up" {
             if {$VIEWPORT_VERTICAL_OFFSET > 0 && [lindex $cursorPosition 0] == 0} {
@@ -192,6 +194,8 @@ proc move_cursor {direction} {
         }
     }
     
+    puts "move after $direction -> $cursorPosition"
+
     # this used to update only changes now all of the lines, might change it back
     update_display
 }
@@ -354,7 +358,7 @@ set queue {}
 set times {}
 
 proc handle_key_press {k} {
-    global cursorPosition queue times command_tab_open
+    global cursorPosition queue times command_tab_open VIEWPORT_VERTICAL_OFFSET
     
     if {$queue eq "Control_L" && $k eq "c"} {
         if {[expr [clock milliseconds] - $times] <= 500} {
@@ -369,7 +373,7 @@ proc handle_key_press {k} {
     if { $command_tab_open == 1 } {
         command_tab_handle_input $k
     } else {    
-        set lin [lindex $cursorPosition 1]
+        set lin [expr {[lindex $cursorPosition 1] + $VIEWPORT_VERTICAL_OFFSET}]
         set col [lindex $cursorPosition 0]
         networking::send "key $col $lin $k"
     }

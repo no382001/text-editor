@@ -16,6 +16,10 @@ void document_init(Document *d) {
 }
 
 void document_deinit(Document *d) {
+  if (!d) {
+    return;
+  }
+
   LineNode *current_line = d->first_line;
   while (current_line) {
     Node *current_node = current_line->head;
@@ -35,6 +39,12 @@ void document_deinit(Document *d) {
   d->last_line = NULL;
   d->line_count = 0;
   free(d->line_index.index);
+}
+
+void document_reset(Document *d) {
+  log_message(DEBUG, "document reset!");
+  document_deinit(d);
+  document_init(d);
 }
 
 void document_append(Document *d, const char *text) {
@@ -83,9 +93,9 @@ void document_build_index(Document *d, size_t gap) {
 
   log_message(DEBUG, "index built with %zu entries!", d->line_index.index_size);
 
-  //printf("\033[H\033[J");
-  //fflush(stdout);
-  //document_print_structure(d);
+  // printf("\033[H\033[J");
+  // fflush(stdout);
+  // document_print_structure(d);
 }
 
 LineNode *document_find_line(Document *d, int i) {
@@ -162,6 +172,11 @@ void document_load_file(Document *d, char *filename) {
     perror("Failed to open file");
     return;
   }
+
+  if (d) {
+    document_reset(d);
+  }
+
   d->name = filename;
 
   char *line = NULL;

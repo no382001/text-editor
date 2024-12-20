@@ -18,14 +18,12 @@ int main() {
   set_log_level(DEBUG);
   /* ---- */
   buffer_pool_init(POOL_SIZE);
-  Document d;
+  Document d = {0};
   document_init(&d);
   g_d = &d;
-  // print_path();
-  document_load_file(&d, "TODO");
-  document_build_index(&d, DOCUMENT_INDEX_GAP);
 
-  networking_thread();
+  network_cfg_t n = {.startup_cmd = "echo open TODO"};
+  networking_thread(&n);
 
   document_deinit(&d);
   buffer_pool_deinit();

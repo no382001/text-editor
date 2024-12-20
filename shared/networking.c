@@ -242,6 +242,9 @@ static void accept_data(network_cfg_t *n) {
       log_message(INFO, "client connected!");
       set_nonblocking(
           n->client_fd); // make the client socket non-blocking as well
+      if (n->startup_cmd) {
+        send_to_client(n->startup_cmd);
+      }
     }
   }
 }
@@ -346,15 +349,14 @@ void send_to_client(const char *format, ...) {
   send_data(global_network_cfg, buffer);
 }
 
-void networking_thread(void) {
-  network_cfg_t n = {0};
-  setup_signal_handling(&n);
-  init_networking(&n);
+void networking_thread(network_cfg_t *n) {
+  setup_signal_handling(n);
+  init_networking(n);
 
   while (1) {
-    accept_data(&n);
-    handle_data(&n);
+    accept_data(n);
+    handle_data(n);
   }
 
-  close(n.server_fd);
+  close(n->server_fd);
 }
